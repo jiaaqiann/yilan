@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>宜蘭兩天一夜</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="宜蘭旅遊">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ffb7c5">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif; background: #fff9fb; color: #333; }
+  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; }
+
+  .topbar { background: linear-gradient(135deg, #ffb7c5, #ffd6a5, #fffb8f); padding: 1.25rem 1.25rem 1rem; position: sticky; top: 0; z-index: 10; }
+  .topbar h1 { font-size: 18px; font-weight: 800; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+  .topbar p { font-size: 12px; color: rgba(255,255,255,0.9); margin-top: 2px; }
+
+  .page { display: none; padding: 1rem 1rem 5.5rem; }
+  .page.active { display: block; }
+
+  .tabbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #fff; border-top: 1px solid #f0e0f0; display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 0 6px; cursor: pointer; border: none; background: none; }
+  .tab-icon { font-size: 20px; line-height: 1; }
+  .tab-label { font-size: 10px; font-weight: 600; color: #ccc; margin-top: 3px; }
+  .tab.active .tab-label { color: #ff85a1; }
+  .tab-dot { width: 4px; height: 4px; border-radius: 50%; background: transparent; margin-top: 3px; }
+  .tab.active .tab-dot { background: #ff85a1; }
+
+  .sec-title { font-size: 13px; font-weight: 800; margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; }
+
+  /* Cards */
+  .card { background: #fff; border-radius: 16px; padding: 1rem 1.1rem; margin-bottom: 0.85rem; }
+  .card-pink { border: 2px solid #ffd6e7; }
+  .card-blue { border: 2px solid #c8e8ff; }
+  .card-yellow { border: 2px solid #ffe0a3; }
+
+  .stay-name { font-size: 15px; font-weight: 700; color: #e75480; }
+  .stay-addr { font-size: 12px; color: #aaa; margin-top: 3px; }
+  .btn { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; color: #fff; padding: 4px 12px; border-radius: 20px; text-decoration: none; border: none; cursor: pointer; }
+  .btn-blue { background: #74b9ff; }
+  .btn-pink { background: #ff85a1; margin-left: 6px; }
+  .btn-green { background: #6bcb77; }
+  .btn-gray { background: #ccc; margin-left: 6px; }
+  .btn-red { background: #ff7675; margin-left: 6px; }
+
+  .day-pill { display: inline-block; font-size: 12px; font-weight: 800; padding: 4px 14px; border-radius: 20px; color: #fff; margin-bottom: 0.85rem; }
+  .day1-bg { background: linear-gradient(90deg, #ff85a1, #ffb347); }
+  .day2-bg { background: linear-gradient(90deg, #a29bfe, #74b9ff); }
+  .day-date { font-size: 12px; color: #bbb; font-weight: 500; margin-left: 8px; }
+
+  /* Timeline */
+  .timeline { display: flex; flex-direction: column; }
+  .stop { display: flex; }
+  .stop-line { display: flex; flex-direction: column; align-items: center; width: 30px; flex-shrink: 0; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; border: 2.5px solid #fff; }
+  .dot-yellow { background: #ffd93d; box-shadow: 0 0 0 2px #ffd93d; }
+  .dot-mint   { background: #6bcb77; box-shadow: 0 0 0 2px #6bcb77; }
+  .dot-pink   { background: #ff85a1; box-shadow: 0 0 0 2px #ff85a1; }
+  .dot-purple { background: #c77dff; box-shadow: 0 0 0 2px #c77dff; }
+  .dot-blue   { background: #74b9ff; box-shadow: 0 0 0 2px #74b9ff; }
+  .dot-orange { background: #ffb347; box-shadow: 0 0 0 2px #ffb347; }
+  .connector { width: 2px; flex: 1; background: #f0e0f0; min-height: 12px; }
+  .stop:last-child .connector { display: none; }
+  .stop-content { padding: 0 0 1rem 8px; flex: 1; }
+  .stop-time { font-size: 11px; color: #ccc; margin-bottom: 3px; font-weight: 600; }
+  .stop-card { background: #fff; border-radius: 14px; padding: 0.75rem 1rem; border: 2px solid #f5e6ff; }
+  .stop-card.food  { border-color: #ffe8c0; }
+  .stop-card.stay  { border-color: #c8f0db; }
+  .stop-card.trans { border-color: #e0e0e0; }
+  .stop-name-text { font-size: 14px; font-weight: 700; color: #333; }
+  .stop-note-text { font-size: 12px; color: #999; margin-top: 3px; line-height: 1.5; }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+  .tag { font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; background: #fff0f5; color: #e05480; }
+  .tag-free { background: #e8faf0; color: #2e9e60; }
+  .stop-links { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+
+  /* Edit modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem 2rem; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; }
+  .modal-title { font-size: 16px; font-weight: 800; color: #333; margin-bottom: 1rem; }
+  .modal label { font-size: 12px; font-weight: 700; color: #aaa; display: block; margin-bottom: 4px; margin-top: 0.75rem; }
+  .modal input, .modal textarea, .modal select {
+    width: 100%; border: 2px solid #f0e0f0; border-radius: 10px; padding: 8px 10px;
+    font-size: 14px; font-family: inherit; color: #333; background: #fff9fb;
+    outline: none; transition: border 0.15s;
+  }
+  .modal input:focus, .modal textarea:focus { border-color: #ff85a1; }
+  .modal textarea { resize: vertical; min-height: 60px; }
+  .modal-btns { display: flex; gap: 8px; margin-top: 1.25rem; }
+  .modal-btns button { flex: 1; padding: 10px; border-radius: 12px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-save { background: linear-gradient(90deg, #ff85a1, #ffb347); color: #fff; }
+  .btn-cancel { background: #f5f5f5; color: #aaa; }
+  .btn-delete-stop { background: #fff0f0; color: #ff7675; margin-top: 0.5rem; width: 100%; padding: 10px; border-radius: 12px; border: 2px solid #ffd6d6; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+  /* Add stop button */
+  .add-stop-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 10px; border-radius: 14px; border: 2px dashed #ffb7c5; background: #fff5f7; color: #ff85a1; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 0.25rem; margin-bottom: 1rem; }
+
+  /* Weather */
+  .weather-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .weather-day { border-radius: 12px; padding: 0.75rem; text-align: center; }
+  .w-day1 { background: #f0f9ff; } .w-day2 { background: #f5f0ff; }
+  .weather-date { font-size: 11px; font-weight: 700; color: #888; margin-bottom: 4px; }
+  .weather-icon { font-size: 28px; margin: 4px 0; }
+  .weather-temp { font-size: 18px; font-weight: 800; color: #333; }
+  .weather-desc { font-size: 11px; color: #999; margin-top: 3px; }
+  .weather-rain { font-size: 11px; color: #aaa; margin-top: 4px; }
+  .wtag { font-size: 12px; font-weight: 600; background: #e8f4ff; color: #3a7abf; padding: 4px 10px; border-radius: 20px; }
+  .weather-note { font-size: 12px; color: #74b9ff; text-align: center; margin-top: 10px; font-weight: 600; }
+
+  /* Map rows */
+  .map-row { display: flex; align-items: center; gap: 10px; padding: 0.7rem 0; border-bottom: 1px solid #f5f0ff; text-decoration: none; }
+  .map-row:last-child { border-bottom: none; }
+  .map-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .map-info { flex: 1; }
+  .map-name { font-size: 14px; font-weight: 700; color: #333; }
+  .map-day { font-size: 11px; color: #bbb; margin-top: 1px; }
+  .map-btn { font-size: 12px; font-weight: 700; color: #fff; background: #74b9ff; padding: 4px 12px; border-radius: 20px; flex-shrink: 0; text-decoration: none; }
+
+  /* Reminder */
+  .reminder-item { display: flex; align-items: center; gap: 10px; padding: 0.65rem 0; border-bottom: 1px dashed #ffe0a3; cursor: pointer; }
+  .reminder-item:last-child { border-bottom: none; }
+  .check-circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #ffc0cb; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; background: #fff5f7; font-size: 14px; }
+  .reminder-item.done .check-circle { background: #a8e6cf; border-color: #a8e6cf; }
+  .checkmark { display: none; } .reminder-item.done .checkmark { display: block; }
+  .r-icon { display: block; } .reminder-item.done .r-icon { display: none; }
+  .r-name { font-size: 13px; font-weight: 700; color: #555; flex: 1; }
+  .reminder-item.done .r-name { color: #aaa; text-decoration: line-through; }
+  .r-sub { font-size: 11px; color: #bbb; margin-top: 1px; }
+  .r-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; flex-shrink: 0; }
+  .todo { background: #ffe0e0; color: #e05050; }
+  .booked { background: #d4f5e2; color: #2e9e60; }
+
+  .edit-btn { font-size: 11px; font-weight: 700; color: #ff85a1; background: #fff0f5; border: none; padding: 3px 10px; border-radius: 20px; cursor: pointer; flex-shrink: 0; }
+  .footer-note { text-align: center; font-size: 12px; color: #ffb7c5; font-weight: 700; padding: 1rem 0 0.5rem; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <h1>🌊 宜蘭兩天一夜 🧳</h1>
+    <p>2026/05/09（六）— 05/10（日）・家族旅遊 👨‍👩‍👧‍👦</p>
+  </div>
+
+  <!-- 行程頁 -->
+  <div class="page active" id="page-trip">
+    <div class="sec-title" style="color:#e75480; margin-top:0.5rem;">🏠 住宿資訊</div>
+    <div class="card card-pink">
+      <div class="stay-name">真善美民宿</div>
+      <div class="stay-addr">宜蘭縣三星鄉義洲路一段35號</div>
+      <a class="btn btn-pink" href="https://maps.app.goo.gl/5WvQRxgwLgrcBv8q7">📍 地圖</a>
+    </div>
+
+    <div class="sec-title" style="color:#ff6b8a;">🌸 Day 1 行程</div>
+    <span class="day-pill day1-bg">Day 1</span><span class="day-date">05/09（六）</span>
+    <div style="height:0.75rem;"></div>
+    <div class="timeline" id="timeline-day1"></div>
+    <button class="add-stop-btn" onclick="openAdd(1)">＋ 新增 Day1 景點</button>
+
+    <div class="sec-title" style="color:#7b6ef6;">🌈 Day 2 行程</div>
+    <span class="day-pill day2-bg">Day 2</span><span class="day-date">05/10（日）</span>
+    <div style="height:0.75rem;"></div>
+    <div class="timeline" id="timeline-day2"></div>
+    <button class="add-stop-btn" onclick="openAdd(2)">＋ 新增 Day2 景點</button>
+    <div class="footer-note">✨ 用心規劃，開心出發 ✨</div>
+  </div>
+
+  <!-- 地圖頁 -->
+  <div class="page" id="page-map">
+    <div class="sec-title" style="color:#74b9ff; margin-top:0.5rem;">🗺️ 景點地圖</div>
+    <div class="card card-blue" id="map-list"></div>
+  </div>
+
+  <!-- 天氣頁 -->
+  <div class="page" id="page-weather">
+    <div class="sec-title" style="color:#74b9ff; margin-top:0.5rem;">🌤️ 出發天氣（宜蘭五月）</div>
+    <div class="card card-blue">
+      <div class="weather-grid">
+        <div class="weather-day w-day1">
+          <div class="weather-date">Day1・05/09（六）</div>
+          <div class="weather-icon">⛅</div>
+          <div class="weather-temp">27° / 22°</div>
+          <div class="weather-desc">多雲、偶有陣雨</div>
+          <div class="weather-rain">☔ 降雨機率高</div>
+        </div>
+        <div class="weather-day w-day2">
+          <div class="weather-date">Day2・05/10（日）</div>
+          <div class="weather-icon">🌦️</div>
+          <div class="weather-temp">28° / 23°</div>
+          <div class="weather-desc">多雲、午後陣雨</div>
+          <div class="weather-rain">💧 濕度偏高</div>
+        </div>
+      </div>
+      <div style="margin-top:12px; border-top:1px dashed #d0eaff; padding-top:10px;">
+        <div style="font-size:12px; font-weight:700; color:#74b9ff; margin-bottom:8px;">🎒 建議攜帶</div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+          <span class="wtag">☂️ 雨傘／雨衣</span><span class="wtag">🧴 防曬乳</span>
+          <span class="wtag">👟 防水鞋</span><span class="wtag">👕 薄外套</span>
+          <span class="wtag">🧊 保冷袋</span><span class="wtag">🩹 OK繃</span>
+          <span class="wtag">💊 暈車藥</span><span class="wtag">🪪 學生證</span>
+        </div>
+      </div>
+      <div class="weather-note">⚠️ 宜蘭五月多雨，出發前記得查最新天氣預報！</div>
+    </div>
+  </div>
+
+  <!-- 訂位頁 -->
+  <div class="page" id="page-reminder">
+    <div class="sec-title" style="color:#e8a020; margin-top:0.5rem;">⚠️ 訂位提醒 <span style="font-size:11px;font-weight:500;color:#ccc;">點一下打勾</span></div>
+    <div class="card card-yellow" id="reminder-list"></div>
+    <button class="add-stop-btn" style="border-color:#fac97a; color:#e8a020;" onclick="openAddReminder()">＋ 新增提醒</button>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tabbar">
+    <button class="tab active" onclick="switchTab('trip', this)">
+      <span class="tab-icon">🗓️</span><span class="tab-label">行程</span><span class="tab-dot"></span>
+    </button>
+    <button class="tab" onclick="switchTab('map', this)">
+      <span class="tab-icon">🗺️</span><span class="tab-label">地圖</span><span class="tab-dot"></span>
+    </button>
+    <button class="tab" onclick="switchTab('weather', this)">
+      <span class="tab-icon">🌤️</span><span class="tab-label">天氣</span><span class="tab-dot"></span>
+    </button>
+    <button class="tab" onclick="switchTab('reminder', this)">
+      <span class="tab-icon">✅</span><span class="tab-label">訂位</span><span class="tab-dot"></span>
+    </button>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">編輯景點</div>
+    <label>⏰ 時間</label>
+    <input type="text" id="edit-time" placeholder="例如：08:00 或 上午">
+    <label>📍 景點名稱</label>
+    <input type="text" id="edit-name" placeholder="例如：🐟 大溪漁港">
+    <label>📝 備註</label>
+    <textarea id="edit-note" placeholder="備註說明"></textarea>
+    <label>🗺️ Google Maps 連結</label>
+    <input type="text" id="edit-map" placeholder="https://maps.app.goo.gl/...">
+    <label>📖 網站 / 食記連結</label>
+    <input type="text" id="edit-article" placeholder="https://...">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveStop()">儲存</button>
+    </div>
+    <button class="btn-delete-stop" id="delete-btn" onclick="deleteStop()">🗑️ 刪除此景點</button>
+  </div>
+</div>
+
+<!-- Reminder Modal -->
+<div class="modal-overlay" id="r-modal">
+  <div class="modal">
+    <div class="modal-title" id="r-modal-title">新增提醒</div>
+    <label>😊 圖示（emoji）</label>
+    <input type="text" id="r-edit-icon" placeholder="例如：🍽️">
+    <label>📋 名稱</label>
+    <input type="text" id="r-edit-name" placeholder="例如：某間餐廳">
+    <label>🗒️ 說明</label>
+    <input type="text" id="r-edit-sub" placeholder="例如：Day1 晚餐">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="document.getElementById('r-modal').classList.remove('open')">取消</button>
+      <button class="btn-save" onclick="saveReminder()">儲存</button>
+    </div>
+    <button class="btn-delete-stop" id="r-delete-btn" onclick="deleteReminder()">🗑️ 刪除此提醒</button>
+  </div>
+</div>
+
+<script>
+// 預設資料
+var defaultData = {
+  day1: [
+    { time: '08:00', name: '🚗 出發！', note: '從桃園出發，開車前往宜蘭', map: '', article: '', type: 'trans' },
+    { time: '上午', name: '🐟 大溪漁港', note: '買晚上烤肉所需的新鮮海產', map: 'https://maps.app.goo.gl/7mT7FTcjBnCYSAZW6', article: '', type: '' },
+    { time: '上午／下午', name: '🏮 宜蘭傳藝園區', note: '逛逛、散步，感受傳統工藝文化氛圍\n全票 $150 ／ 敬老 $75 ／ 優惠 $120（記得帶學生證🪪）\n兒童（未滿6歲）免費 ／ 身心障礙免費＋陪同1名', map: 'https://maps.app.goo.gl/fdsd2DyHnMp5w8XF7', article: '', type: '' },
+    { time: '中餐', name: '🍚 福哥石窯雞 羅東店', note: '吃中餐～', map: 'https://maps.app.goo.gl/yANEi3C2MxWvisrT9', article: 'https://curly.com.tw/fu-ge/', type: 'food' },
+    { time: '晚上', name: '🔥 民宿烤肉＋同樂', note: '盡情烤肉、唱歌、打牌！', map: '', article: '', type: 'stay' }
+  ],
+  day2: [
+    { time: '11:00', name: '🛌 退房', note: '開啟美好的第二天！', map: '', article: '', type: 'stay' },
+    { time: '中餐', name: '🦞 甲富哥活海產', note: '吃中餐～', map: 'https://maps.app.goo.gl/jwA9vdPpnanbcWBb8', article: 'https://blake.com.tw/blog/post/jia-fu-ge-2509', type: 'food' },
+    { time: '下午', name: '🐑 星夢森林劇場', note: '看可愛小動物！\n全票 $230 ／ 兒童（2–4歲）$50\n優惠 $150（65歲以上、身心障礙＋陪同1名）', map: 'https://maps.app.goo.gl/hipN9DesdHjAAtuC7', article: '', type: '' }
+  ]
+};
+
+var dots = ['dot-yellow','dot-mint','dot-pink','dot-purple','dot-blue','dot-orange'];
+var editDay = 1, editIndex = -1;
+
+function getData() {
+  try {
+    var d = localStorage.getItem('yilan_stops');
+    return d ? JSON.parse(d) : JSON.parse(JSON.stringify(defaultData));
+  } catch(e) { return JSON.parse(JSON.stringify(defaultData)); }
+}
+
+function saveData(data) {
+  localStorage.setItem('yilan_stops', JSON.stringify(data));
+}
+
+function renderAll() {
+  var data = getData();
+  renderTimeline('timeline-day1', data.day1, 1);
+  renderTimeline('timeline-day2', data.day2, 2);
+  renderMapList(data);
+}
+
+function renderTimeline(id, stops, day) {
+  var el = document.getElementById(id);
+  el.innerHTML = '';
+  stops.forEach(function(stop, i) {
+    var dot = dots[i % dots.length];
+    var div = document.createElement('div');
+    div.className = 'stop';
+    var links = '';
+    if (stop.map) links += '<a class="btn btn-blue" href="' + stop.map + '" target="_blank">📍 地圖</a>';
+    if (stop.article) links += '<a class="btn btn-pink" href="' + stop.article + '" target="_blank">📖 食記</a>';
+    div.innerHTML =
+      '<div class="stop-line"><div class="dot ' + dot + '"></div><div class="connector"></div></div>' +
+      '<div class="stop-content">' +
+        '<div class="stop-time">' + (stop.time||'') + '</div>' +
+        '<div class="stop-card ' + (stop.type||'') + '">' +
+          '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">' +
+            '<div class="stop-name-text">' + stop.name + '</div>' +
+            '<button class="edit-btn" onclick="openEdit(' + day + ',' + i + ')">✏️ 編輯</button>' +
+          '</div>' +
+          (stop.note ? '<div class="stop-note-text">' + stop.note.replace(/\n/g,'<br>') + '</div>' : '') +
+          (links ? '<div class="stop-links">' + links + '</div>' : '') +
+        '</div>' +
+      '</div>';
+    el.appendChild(div);
+  });
+}
+
+function renderMapList(data) {
+  var all = [];
+  data.day1.forEach(function(s){ if(s.map) all.push({name:s.name, map:s.map, day:'Day1'}); });
+  all.push({name:'🏠 真善美民宿', map:'https://maps.app.goo.gl/5WvQRxgwLgrcBv8q7', day:'住宿'});
+  data.day2.forEach(function(s){ if(s.map) all.push({name:s.name, map:s.map, day:'Day2'}); });
+  var bgColors = ['#e0f5ff','#fff0f5','#fffbe0','#e8faf0','#f0eeff','#fef0d8'];
+  var el = document.getElementById('map-list');
+  el.innerHTML = all.map(function(s,i){
+    var emoji = s.name.match(/[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27BF}]/u);
+    var icon = emoji ? emoji[0] : '📍';
+    return '<a class="map-row" href="'+s.map+'" target="_blank">' +
+      '<span class="map-icon" style="background:'+bgColors[i%bgColors.length]+'">'+icon+'</span>' +
+      '<div class="map-info"><div class="map-name">'+s.name+'</div><div class="map-day">'+s.day+'</div></div>' +
+      '<span class="map-btn">地圖 →</span></a>';
+  }).join('');
+}
+
+function openEdit(day, index) {
+  var data = getData();
+  var stop = (day===1 ? data.day1 : data.day2)[index];
+  editDay = day; editIndex = index;
+  document.getElementById('modal-title').textContent = '✏️ 編輯景點';
+  document.getElementById('edit-time').value = stop.time || '';
+  document.getElementById('edit-name').value = stop.name || '';
+  document.getElementById('edit-note').value = stop.note || '';
+  document.getElementById('edit-map').value = stop.map || '';
+  document.getElementById('edit-article').value = stop.article || '';
+  document.getElementById('delete-btn').style.display = 'block';
+  document.getElementById('modal').classList.add('open');
+}
+
+function openAdd(day) {
+  editDay = day; editIndex = -1;
+  document.getElementById('modal-title').textContent = '＋ 新增景點';
+  document.getElementById('edit-time').value = '';
+  document.getElementById('edit-name').value = '';
+  document.getElementById('edit-note').value = '';
+  document.getElementById('edit-map').value = '';
+  document.getElementById('edit-article').value = '';
+  document.getElementById('delete-btn').style.display = 'none';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function saveStop() {
+  var data = getData();
+  var arr = editDay === 1 ? data.day1 : data.day2;
+  var stop = {
+    time: document.getElementById('edit-time').value.trim(),
+    name: document.getElementById('edit-name').value.trim(),
+    note: document.getElementById('edit-note').value.trim(),
+    map: document.getElementById('edit-map').value.trim(),
+    article: document.getElementById('edit-article').value.trim(),
+    type: ''
+  };
+  if (editIndex === -1) {
+    arr.push(stop);
+  } else {
+    arr[editIndex] = stop;
+  }
+  saveData(data);
+  renderAll();
+  closeModal();
+}
+
+function deleteStop() {
+  if (!confirm('確定要刪除這個景點嗎？')) return;
+  var data = getData();
+  var arr = editDay === 1 ? data.day1 : data.day2;
+  arr.splice(editIndex, 1);
+  saveData(data);
+  renderAll();
+  closeModal();
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById('page-' + name).classList.add('active');
+  el.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function getReminders() {
+  var def = [
+    { icon: '🍚', name: '福哥石窯雞 羅東店', sub: 'Day1 中餐', done: false },
+    { icon: '🦞', name: '甲富哥活海產', sub: 'Day2 中餐', done: false },
+    { icon: '🏠', name: '真善美民宿', sub: '住宿', done: true }
+  ];
+  try {
+    var d = localStorage.getItem('yilan_reminders');
+    return d ? JSON.parse(d) : def;
+  } catch(e) { return def; }
+}
+
+function saveReminders(data) {
+  localStorage.setItem('yilan_reminders', JSON.stringify(data));
+}
+
+function renderReminders() {
+  var reminders = getReminders();
+  var el = document.getElementById('reminder-list');
+  if (!el) return;
+  el.innerHTML = reminders.map(function(r, i) {
+    return '<div class="reminder-item ' + (r.done ? 'done' : '') + '" onclick="toggleReminderNew(' + i + ')">' +
+      '<div class="check-circle"><span class="checkmark">✅</span><span class="r-icon">' + r.icon + '</span></div>' +
+      '<div style="flex:1"><div class="r-name">' + r.name + '</div><div class="r-sub">' + r.sub + '</div></div>' +
+      '<span class="r-badge ' + (r.done ? 'booked' : 'todo') + '">' + (r.done ? '已訂 ✓' : '待訂位') + '</span>' +
+      '<button class="edit-btn" style="margin-left:6px;" onclick="event.stopPropagation();openEditReminder(' + i + ')">✏️</button>' +
+    '</div>';
+  }).join('');
+}
+
+function toggleReminderNew(i) {
+  var reminders = getReminders();
+  reminders[i].done = !reminders[i].done;
+  saveReminders(reminders);
+  renderReminders();
+}
+
+var editReminderIndex = -1;
+
+function openAddReminder() {
+  editReminderIndex = -1;
+  document.getElementById('r-modal-title').textContent = '＋ 新增提醒';
+  document.getElementById('r-edit-icon').value = '';
+  document.getElementById('r-edit-name').value = '';
+  document.getElementById('r-edit-sub').value = '';
+  document.getElementById('r-delete-btn').style.display = 'none';
+  document.getElementById('r-modal').classList.add('open');
+}
+
+function openEditReminder(i) {
+  var reminders = getReminders();
+  var r = reminders[i];
+  editReminderIndex = i;
+  document.getElementById('r-modal-title').textContent = '✏️ 編輯提醒';
+  document.getElementById('r-edit-icon').value = r.icon || '';
+  document.getElementById('r-edit-name').value = r.name || '';
+  document.getElementById('r-edit-sub').value = r.sub || '';
+  document.getElementById('r-delete-btn').style.display = 'block';
+  document.getElementById('r-modal').classList.add('open');
+}
+
+function saveReminder() {
+  var reminders = getReminders();
+  var item = {
+    icon: document.getElementById('r-edit-icon').value.trim() || '📋',
+    name: document.getElementById('r-edit-name').value.trim(),
+    sub: document.getElementById('r-edit-sub').value.trim(),
+    done: false
+  };
+  if (editReminderIndex === -1) {
+    reminders.push(item);
+  } else {
+    item.done = reminders[editReminderIndex].done;
+    reminders[editReminderIndex] = item;
+  }
+  saveReminders(reminders);
+  renderReminders();
+  document.getElementById('r-modal').classList.remove('open');
+}
+
+function deleteReminder() {
+  if (!confirm('確定要刪除這個提醒嗎？')) return;
+  var reminders = getReminders();
+  reminders.splice(editReminderIndex, 1);
+  saveReminders(reminders);
+  renderReminders();
+  document.getElementById('r-modal').classList.remove('open');
+}
+
+function toggleReminder(id) {}  // 保留舊函式避免錯誤
+
+// 初始化
+window.onload = function() {
+  renderAll();
+  renderReminders();
+};
+</script>
+</body>
+</html>
