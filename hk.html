@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -6,27 +6,28 @@
     <title>港澳復古旅遊規劃 App</title>
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 載入 Lucide 圖示 (像 Canva 的專業圖示) -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 載入 Lucide 圖示庫 -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap');
         
         body {
-            background-color: #FDF5E6; /* 復古米色背景 */
+            background-color: #FDF5E6; 
             font-family: 'Noto Sans TC', sans-serif;
             -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
         }
 
-        /* 核心設計：硬陰影卡片 */
+        /* 核心設計：新野獸派硬陰影 */
         .neo-card {
             border: 4px solid #000;
             box-shadow: 8px 8px 0px 0px #000;
-            transition: all 0.1s;
+            transition: all 0.1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
             cursor: pointer;
         }
 
-        /* 按下去的下陷效果 */
+        /* 互動效果 */
         .neo-card:active {
             transform: translate(4px, 4px);
             box-shadow: 4px 4px 0px 0px #000;
@@ -34,126 +35,33 @@
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        .page { transition: opacity 0.3s ease; }
-    </style>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        // --- Firebase 配置 ---
-        // 注意：如果你要在自己的 GitHub 使用，請將下面的 config 換成你在 Firebase 控制台取得的內容
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "", 
-            authDomain: "", 
-            projectId: "", 
-            storageBucket: "", 
-            messagingSenderId: "", 
-            appId: ""
-        };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hk-mo-travel-demo';
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        // 狀態
-        let currentUser = null;
-        let state = {
-            currency: 'HKD',
-            rate: 4.15
-        };
-
-        // 初始化
-        signInAnonymously(auth).catch(err => console.error("驗證失敗", err));
-        onAuthStateChanged(auth, user => {
-            currentUser = user;
-            if (user) initDataListeners();
-        });
-
-        // 全域函數
-        window.showPage = (pageId) => {
-            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-            document.getElementById(pageId).classList.remove('hidden');
-            window.scrollTo(0, 0);
-            lucide.createIcons(); // 確保新頁面的圖示有被渲染
-        };
-
-        window.updateRate = () => {
-            const amount = document.getElementById('calc-input').value;
-            const resDisplay = document.getElementById('calc-result');
-            const total = Math.round(amount * state.rate);
-            resDisplay.innerText = `約 NT$ ${total || 0}`;
-        };
-
-        window.toggleCurrency = (type) => {
-            state.currency = type;
-            state.rate = type === 'HKD' ? 4.15 : 4.02;
-            document.querySelectorAll('.curr-btn').forEach(b => b.classList.remove('bg-white', 'text-black'));
-            event.target.classList.add('bg-white', 'text-black');
-            updateRate();
-        };
-
-        window.saveExpense = async () => {
-            const amount = document.getElementById('calc-input').value;
-            if (!amount || !currentUser) return;
-            
-            try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), {
-                    amount: parseFloat(amount),
-                    currency: state.currency,
-                    twd: Math.round(amount * state.rate),
-                    timestamp: serverTimestamp(),
-                    uid: currentUser.uid
-                });
-                document.getElementById('calc-input').value = '';
-                alert('已同步到雲端！');
-                showPage('home');
-            } catch (e) {
-                alert('儲存失敗，請檢查 Firebase 設定');
-            }
-        };
-
-        function initDataListeners() {
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), (snapshot) => {
-                const list = document.getElementById('expense-list');
-                if(!list) return;
-                list.innerHTML = '';
-                snapshot.docs.forEach(doc => {
-                    const data = doc.data();
-                    const item = document.createElement('div');
-                    item.className = "bg-white border-4 border-black rounded-2xl p-4 shadow-[4px_4px_0px_#000] flex justify-between items-center mb-4";
-                    item.innerHTML = `
-                        <div>
-                            <span class="font-black text-lg">${data.currency} ${data.amount}</span>
-                            <p class="text-[10px] text-gray-400 font-bold uppercase">已即時同步</p>
-                        </div>
-                        <div class="text-2xl font-black text-[#00A373] italic text-right">NT$ ${data.twd}</div>
-                    `;
-                    list.appendChild(item);
-                });
-            });
+        /* 頁面切換動畫 */
+        .page {
+            animation: fadeIn 0.4s ease-out;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
-    </script>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-green-shadow { box-shadow: 6px 6px 0px #00A373; }
+        .btn-green-shadow:active { box-shadow: 0px 0px 0px #00A373; }
+    </style>
 </head>
 <body class="max-w-md mx-auto min-h-screen border-x-4 border-black relative bg-[#FDF5E6]">
 
     <!-- 1. 首頁 (Home) -->
     <div id="home" class="page p-6 pb-40">
-        <h1 class="text-4xl font-black italic mb-10 tracking-tighter uppercase">
-            <span class="bg-red-500 text-white px-3 py-1 rounded-xl border-4 border-black shadow-[4px_4px_0px_#000]">HK MO</span>
+        <h1 class="text-4xl font-black italic mb-10 tracking-tighter uppercase flex items-center gap-3">
+            <span class="bg-red-500 text-white px-3 py-1 rounded-2xl border-4 border-black shadow-[4px_4px_0px_#000]">HK MO</span>
             2026 ✈️
         </h1>
 
         <div class="grid grid-cols-3 gap-5">
             <!-- 行程卡片 (Hero) -->
             <div onclick="showPage('itinerary')" class="neo-card col-span-2 bg-red-500 text-white p-6 h-56 rounded-[32px] flex flex-col justify-end relative">
-                <i data-lucide="map" class="absolute top-6 left-6 w-14 h-14 stroke-[3]"></i>
+                <i data-lucide="map" class="absolute top-6 left-6 w-14 h-14 stroke-[2.5]"></i>
                 <div>
                     <span class="text-3xl font-black block leading-none">行程表</span>
                     <span class="text-sm font-bold opacity-80 italic uppercase tracking-widest">Timeline</span>
@@ -162,25 +70,25 @@
 
             <!-- 記帳本 -->
             <div onclick="showPage('ledger')" class="neo-card bg-[#00A373] text-white flex flex-col items-center justify-center p-4 rounded-[32px]">
-                <i data-lucide="calculator" class="w-12 h-12 mb-2 stroke-[3]"></i>
+                <i data-lucide="calculator" class="w-12 h-12 mb-2 stroke-[2.5]"></i>
                 <span class="text-xl font-black">記帳</span>
             </div>
 
             <!-- 行李 -->
-            <div class="neo-card bg-white flex flex-col items-center justify-center p-4 rounded-[32px]">
-                <i data-lucide="luggage" class="w-10 h-10 mb-1 text-black stroke-[3]"></i>
+            <div onclick="showPage('luggage')" class="neo-card bg-white flex flex-col items-center justify-center p-4 rounded-[32px]">
+                <i data-lucide="luggage" class="w-10 h-10 mb-1 text-black stroke-[2.5]"></i>
                 <span class="text-lg font-black">行李</span>
             </div>
 
             <!-- 伴手禮 -->
             <div class="neo-card bg-yellow-400 flex flex-col items-center justify-center p-4 rounded-[32px]">
-                <i data-lucide="gift" class="w-10 h-10 mb-1 text-black stroke-[3]"></i>
-                <span class="text-lg font-black">伴手禮</span>
+                <i data-lucide="gift" class="w-10 h-10 mb-1 text-black stroke-[2.5]"></i>
+                <span class="text-lg font-black text-xs">伴手禮</span>
             </div>
 
             <!-- 設定 -->
             <div class="neo-card bg-black text-white flex flex-col items-center justify-center p-4 rounded-[32px]">
-                <i data-lucide="settings" class="w-10 h-10 mb-1 stroke-[3]"></i>
+                <i data-lucide="settings" class="w-10 h-10 mb-1 stroke-[2.5]"></i>
                 <span class="text-lg font-black">設定</span>
             </div>
         </div>
@@ -188,11 +96,11 @@
         <!-- 匯率看板 -->
         <div class="neo-card mt-10 p-6 bg-white rounded-[32px] flex items-center justify-between">
             <div>
-                <h4 class="font-black text-gray-400 text-xs">MARKET RATE</h4>
+                <h4 class="font-black text-gray-400 text-xs uppercase">Current Rate</h4>
                 <p class="font-black text-2xl italic">1 HKD = 4.15 TWD</p>
             </div>
             <div class="w-16 h-16 bg-yellow-400 rounded-full border-4 border-black flex items-center justify-center shadow-[4px_4px_0px_#000]">
-                <i data-lucide="banknote" class="w-8 h-8 text-black stroke-[3]"></i>
+                <i data-lucide="banknote" class="w-8 h-8 text-black stroke-[2.5]"></i>
             </div>
         </div>
     </div>
@@ -209,26 +117,26 @@
             <div class="flex-shrink-0 px-10 py-4 border-4 border-black rounded-full font-black text-xl bg-white shadow-[4px_4px_0px_#000]">DAY 3</div>
         </div>
 
-        <h2 class="text-3xl font-black mb-10 italic flex items-center gap-3">
-            <i data-lucide="milestone" class="text-red-500 w-10 h-10"></i> 行程亮點
+        <h2 class="text-3xl font-black mb-10 italic flex items-center gap-3 underline decoration-red-500 decoration-8">
+            <i data-lucide="milestone" class="text-red-500 w-10 h-10"></i> 時間軸
         </h2>
         
         <div class="border-l-8 border-black ml-5 pl-12 space-y-12 relative">
             <div class="neo-card bg-white p-6 rounded-[28px] relative">
                 <div class="absolute -left-[60px] top-8 w-10 h-10 bg-white border-4 border-black rounded-full shadow-[3px_3px_0px_#000] flex items-center justify-center">
-                    <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
                 </div>
-                <span class="bg-black text-white px-4 py-1 rounded-xl font-black text-sm mb-3 inline-block">10:00</span>
+                <span class="bg-black text-white px-4 py-1 rounded-xl font-black text-sm mb-3 inline-block">10:00 AM</span>
                 <h3 class="text-2xl font-black">抵達香港機場</h3>
-                <p class="text-gray-500 font-bold mt-2">領取八達通並搭乘機場快線</p>
+                <p class="text-gray-500 font-bold mt-2">搭乘機場快線前往市區酒店</p>
             </div>
             <div class="neo-card bg-white p-6 rounded-[28px] relative">
                 <div class="absolute -left-[60px] top-8 w-10 h-10 bg-white border-4 border-black rounded-full shadow-[3px_3px_0px_#000] flex items-center justify-center">
                     <div class="w-3 h-3 bg-red-500 rounded-full"></div>
                 </div>
-                <span class="bg-black text-white px-4 py-1 rounded-xl font-black text-sm mb-3 inline-block">12:30</span>
+                <span class="bg-black text-white px-4 py-1 rounded-xl font-black text-sm mb-3 inline-block">12:30 PM</span>
                 <h3 class="text-2xl font-black">添好運飲茶</h3>
-                <p class="text-gray-500 font-bold mt-2">在地老字號點心美味</p>
+                <p class="text-gray-500 font-bold mt-2">必吃酥皮焗叉燒包</p>
             </div>
         </div>
     </div>
@@ -243,8 +151,8 @@
             <div class="flex justify-between items-center mb-8">
                 <h3 class="font-black text-2xl italic underline uppercase">即時記帳</h3>
                 <div class="flex bg-black p-1.5 rounded-2xl">
-                    <button onclick="toggleCurrency('HKD')" class="curr-btn px-5 py-2 rounded-xl font-black text-sm bg-white text-black transition-all">HKD</button>
-                    <button onclick="toggleCurrency('MOP')" class="curr-btn px-5 py-2 rounded-xl font-black text-sm text-white transition-all">MOP</button>
+                    <button id="btn-hkd" onclick="toggleCurrency('HKD')" class="curr-btn px-5 py-2 rounded-xl font-black text-sm bg-white text-black transition-all">HKD</button>
+                    <button id="btn-mop" onclick="toggleCurrency('MOP')" class="curr-btn px-5 py-2 rounded-xl font-black text-sm text-white transition-all">MOP</button>
                 </div>
             </div>
 
@@ -256,7 +164,7 @@
             </div>
 
             <div class="flex justify-between items-center px-2 mb-8">
-                <span class="font-black text-gray-800 italic text-lg">預估台幣</span>
+                <span class="font-black text-gray-800 italic text-lg">換算台幣約</span>
                 <span id="calc-result" class="text-5xl font-black italic">NT$ 0</span>
             </div>
 
@@ -265,23 +173,118 @@
             </button>
         </div>
 
-        <h3 class="text-2xl font-black mb-8 italic border-b-8 border-black inline-block uppercase">同步清單</h3>
+        <h3 class="text-2xl font-black mb-8 italic border-b-8 border-black inline-block uppercase">近期開支</h3>
         <div id="expense-list" class="space-y-5">
-            <!-- 動態載入 -->
+            <p class="text-gray-400 italic font-bold">目前無紀錄，請先輸入金額...</p>
         </div>
     </div>
 
-    <!-- 全域懸浮按鈕 -->
+    <!-- 4. 行李頁面 (Luggage) -->
+    <div id="luggage" class="page hidden p-6 pb-40">
+        <button onclick="showPage('home')" class="mb-8 flex items-center font-black text-xl italic group">
+            <i data-lucide="arrow-left" class="mr-2 group-active:-translate-x-2 transition-transform"></i> 返回
+        </button>
+        <h2 class="text-3xl font-black mb-10 italic uppercase underline decoration-yellow-400 decoration-8">行李檢核</h2>
+        <div class="space-y-4" id="luggage-list">
+            <!-- 預設項目 -->
+            <div onclick="this.classList.toggle('opacity-50')" class="neo-card bg-white p-6 rounded-[24px] flex justify-between items-center">
+                <span class="text-xl font-black">護照與簽證</span>
+                <i data-lucide="check-square" class="text-red-500"></i>
+            </div>
+            <div onclick="this.classList.toggle('opacity-50')" class="neo-card bg-white p-6 rounded-[24px] flex justify-between items-center">
+                <span class="text-xl font-black">八達通卡</span>
+                <i data-lucide="check-square" class="text-red-500"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全域懸浮按鈕 (計算機) -->
     <div onclick="showPage('ledger')" class="fixed bottom-36 right-8 w-20 h-20 bg-[#00A373] border-4 border-black rounded-[28px] shadow-[8px_8px_0px_#000] flex items-center justify-center cursor-pointer active:scale-90 z-40 transition-transform">
         <i data-lucide="calculator" class="text-white w-10 h-10 stroke-[3]"></i>
     </div>
 
-    <!-- 底部長條按鈕 -->
+    <!-- 底部新增按鈕 -->
     <div class="fixed bottom-0 left-0 right-0 p-10 flex justify-center z-30 pointer-events-none">
-        <button onclick="alert('開啟新增選單')" class="w-full max-w-sm bg-black text-white border-4 border-black rounded-[32px] px-10 py-6 font-black shadow-[8px_8px_0px_#00A373] active:translate-y-2 active:shadow-none transition-all pointer-events-auto text-2xl flex items-center justify-center gap-3">
+        <button onclick="alert('新增功能：行程/支出')" class="w-full max-w-sm bg-black text-white border-4 border-black rounded-[32px] px-10 py-6 font-black shadow-[8px_8px_0px_#00A373] active:translate-y-2 active:shadow-none transition-all pointer-events-auto text-2xl flex items-center justify-center gap-3">
             <i data-lucide="plus" class="stroke-[4] w-8 h-8"></i> 新增紀錄
         </button>
     </div>
 
+    <!-- 控制邏輯 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // Firebase 配置 (如果為空則自動進入模擬模式)
+        const firebaseConfig = { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
+        const isFirebaseValid = firebaseConfig.apiKey !== "";
+
+        let db, auth;
+        if (isFirebaseValid) {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            signInAnonymously(auth).then(() => initListeners());
+        }
+
+        const state = { currency: 'HKD', rate: 4.15 };
+
+        // 全域函數綁定
+        window.showPage = (pageId) => {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.updateRate = () => {
+            const amount = document.getElementById('calc-input').value;
+            document.getElementById('calc-result').innerText = `NT$ ${Math.round(amount * state.rate) || 0}`;
+        };
+
+        window.toggleCurrency = (type) => {
+            state.currency = type;
+            state.rate = type === 'HKD' ? 4.15 : 4.02;
+            document.getElementById('btn-hkd').className = type === 'HKD' ? "curr-btn px-5 py-2 rounded-xl font-black text-sm bg-white text-black" : "curr-btn px-5 py-2 rounded-xl font-black text-sm text-white";
+            document.getElementById('btn-mop').className = type === 'MOP' ? "curr-btn px-5 py-2 rounded-xl font-black text-sm bg-white text-black" : "curr-btn px-5 py-2 rounded-xl font-black text-sm text-white";
+            updateRate();
+        };
+
+        window.saveExpense = async () => {
+            const amt = document.getElementById('calc-input').value;
+            if(!amt) return;
+
+            if (isFirebaseValid) {
+                await addDoc(collection(db, 'artifacts', 'hk-mo-travel', 'public', 'data', 'expenses'), {
+                    amount: amt, currency: state.currency, twd: Math.round(amt * state.rate), timestamp: serverTimestamp()
+                });
+            } else {
+                // 模擬模式：直接加到列表
+                const item = document.createElement('div');
+                item.className = "bg-white border-4 border-black rounded-2xl p-4 shadow-[4px_4px_0px_#000] flex justify-between items-center mb-4";
+                item.innerHTML = `<div><span class="font-black text-lg">${state.currency} ${amt}</span><p class="text-[10px] text-gray-400 font-bold uppercase">模擬儲存</p></div><div class="text-2xl font-black text-[#00A373] italic">NT$ ${Math.round(amt * state.rate)}</div>`;
+                document.getElementById('expense-list').prepend(item);
+            }
+            document.getElementById('calc-input').value = '';
+            alert('儲存成功！');
+        };
+
+        function initListeners() {
+            onSnapshot(collection(db, 'artifacts', 'hk-mo-travel', 'public', 'data', 'expenses'), (snap) => {
+                const list = document.getElementById('expense-list');
+                list.innerHTML = '';
+                snap.docs.forEach(d => {
+                    const data = d.data();
+                    const item = document.createElement('div');
+                    item.className = "bg-white border-4 border-black rounded-2xl p-4 shadow-[4px_4px_0px_#000] flex justify-between items-center mb-4";
+                    item.innerHTML = `<div><span class="font-black text-lg">${data.currency} ${data.amount}</span><p class="text-[10px] text-gray-400 font-bold uppercase">已同步</p></div><div class="text-2xl font-black text-[#00A373] italic">NT$ ${data.twd}</div>`;
+                    list.appendChild(item);
+                });
+            });
+        }
+
+        // 頁面加載後初始化圖示
+        window.addEventListener('load', () => lucide.createIcons());
+    </script>
 </body>
 </html>
