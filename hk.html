@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --bg: #F4F1EA; --shadow: 8px 8px 0px #000; }
+        body { background: var(--bg); font-family: sans-serif; padding: 20px; font-weight: 900; }
+        .page { display: none; } /* 預設所有頁面隱藏 */
+        .active { display: block; } /* 只有 active 的頁面顯示 */
+        
+        /* 你的硬陰影卡片樣式 */
+        .card { border: 4px solid #000; background: #fff; padding: 15px; box-shadow: var(--shadow); cursor: pointer; transition: 0.1s; }
+        .card:active { transform: translate(4px, 4px); box-shadow: 4px 4px 0px #000; }
+        
+        .magazine-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .hero { grid-column: span 2; background: #FF3131; color: #fff; font-size: 1.5rem; height: 100px; display: flex; align-items: center; justify-content: center; }
+        
+        /* 底部按鈕 */
+        .bottom-btn { position: fixed; bottom: 20px; left: 10%; width: 80%; background: #000; color: #fff; padding: 15px; border: none; font-size: 1.2rem; box-shadow: 5px 5px 0px #00A373; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="home" class="page active">
+        <h1>港澳 2026 ✈️</h1>
+        <div class="magazine-grid">
+            <div class="card hero" onclick="showPage('itinerary')">行程表</div>
+            <div class="card" style="background:#00A373; color:#fff;" onclick="showPage('calc')">記帳</div>
+            <div class="card" onclick="alert('行李清單製作中')">行李</div>
+            <div class="card" onclick="alert('伴手禮清單製作中')">伴手禮</div>
+            <div class="card" style="background:#FFD700;">設定</div>
+        </div>
+    </div>
+
+    <div id="itinerary" class="page">
+        <div class="card" onclick="showPage('home')" style="display:inline-block; margin-bottom:10px;">⬅ 返回</div>
+        <h2>📅 行程時間軸</h2>
+        <div class="card">10:00 抵達香港機場</div>
+        <br>
+        <div class="card">12:00 添好運飲茶</div>
+    </div>
+
+    <div id="calc" class="page">
+        <div class="card" onclick="showPage('home')" style="display:inline-block; margin-bottom:10px;">⬅ 返回</div>
+        <div class="card" style="background:#FFD700;">
+            <h3>匯率換算</h3>
+            <input type="number" id="hkd" placeholder="輸入港幣" style="width:80%; padding:10px;" oninput="updateRate()">
+            <p id="twd">台幣約：NT$ 0</p>
+        </div>
+    </div>
+
+    <button class="bottom-btn" onclick="alert('你要新增什麼呢？')">＋ 新增行程 / 項目</button>
+
+    <script>
+        // 控制頁面切換的「大腦」
+        function showPage(pageId) {
+            // 隱藏所有頁面
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            // 顯示被點擊的頁面
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function updateRate() {
+            const val = document.getElementById('hkd').value;
+            document.getElementById('twd').innerText = "台幣約：NT$ " + Math.round(val * 4.1);
+        }
+    </script>
+</body>
+</html>
