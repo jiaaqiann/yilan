@@ -1,70 +1,412 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        :root { --bg: #F4F1EA; --shadow: 8px 8px 0px #000; }
-        body { background: var(--bg); font-family: sans-serif; padding: 20px; font-weight: 900; }
-        .page { display: none; } /* 預設所有頁面隱藏 */
-        .active { display: block; } /* 只有 active 的頁面顯示 */
-        
-        /* 你的硬陰影卡片樣式 */
-        .card { border: 4px solid #000; background: #fff; padding: 15px; box-shadow: var(--shadow); cursor: pointer; transition: 0.1s; }
-        .card:active { transform: translate(4px, 4px); box-shadow: 4px 4px 0px #000; }
-        
-        .magazine-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .hero { grid-column: span 2; background: #FF3131; color: #fff; font-size: 1.5rem; height: 100px; display: flex; align-items: center; justify-content: center; }
-        
-        /* 底部按鈕 */
-        .bottom-btn { position: fixed; bottom: 20px; left: 10%; width: 80%; background: #000; color: #fff; padding: 15px; border: none; font-size: 1.2rem; box-shadow: 5px 5px 0px #00A373; font-weight: bold; }
-    </style>
-</head>
-<body>
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getFirestore, collection, doc, onSnapshot, addDoc, serverTimestamp, query, updateDoc, deleteDoc } from 'firebase/firestore';
+import { 
+  Calculator, Calendar, Luggage, ShoppingBag, 
+  Settings, Plus, ArrowLeft, DollarSign, X, Clock, Check
+} from 'lucide-react';
 
-    <div id="home" class="page active">
-        <h1>港澳 2026 ✈️</h1>
-        <div class="magazine-grid">
-            <div class="card hero" onclick="showPage('itinerary')">行程表</div>
-            <div class="card" style="background:#00A373; color:#fff;" onclick="showPage('calc')">記帳</div>
-            <div class="card" onclick="alert('行李清單製作中')">行李</div>
-            <div class="card" onclick="alert('伴手禮清單製作中')">伴手禮</div>
-            <div class="card" style="background:#FFD700;">設定</div>
-        </div>
-    </div>
+/**
+ * --- Firebase 配置 ---
+ * 在環境中會自動注入 __firebase_config, __app_id, __initial_auth_token
+ */
+const firebaseConfig = typeof __firebase_config !== 'undefined' 
+  ? JSON.parse(__firebase_config) 
+  : { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
 
-    <div id="itinerary" class="page">
-        <div class="card" onclick="showPage('home')" style="display:inline-block; margin-bottom:10px;">⬅ 返回</div>
-        <h2>📅 行程時間軸</h2>
-        <div class="card">10:00 抵達香港機場</div>
-        <br>
-        <div class="card">12:00 添好運飲茶</div>
-    </div>
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'hk-mo-retro-trip';
 
-    <div id="calc" class="page">
-        <div class="card" onclick="showPage('home')" style="display:inline-block; margin-bottom:10px;">⬅ 返回</div>
-        <div class="card" style="background:#FFD700;">
-            <h3>匯率換算</h3>
-            <input type="number" id="hkd" placeholder="輸入港幣" style="width:80%; padding:10px;" oninput="updateRate()">
-            <p id="twd">台幣約：NT$ 0</p>
-        </div>
-    </div>
+// --- 全域設計風格 (Neo-Brutalism) ---
+const styles = {
+  card: "bg-white border-[4px] border-black rounded-[32px] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all cursor-pointer overflow-hidden",
+  button: "bg-black text-white border-[4px] border-black rounded-[24px] px-8 py-5 font-black shadow-[6px_6px_0px_0px_rgba(0,163,115,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all text-xl flex items-center justify-center gap-2",
+  input: "w-full border-[4px] border-black rounded-[20px] p-4 text-2xl font-black outline-none focus:bg-yellow-50 placeholder:text-gray-300",
+  heading: "font-black text-4xl mb-6 tracking-tighter italic uppercase flex items-center gap-2",
+};
 
-    <button class="bottom-btn" onclick="alert('你要新增什麼呢？')">＋ 新增行程 / 項目</button>
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState('home'); // home, itinerary, ledger, luggage
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showQuickCalc, setShowQuickCalc] = useState(false);
+  
+  // 資料狀態
+  const [itinerary, setItinerary] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [luggage, setLuggage] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    <script>
-        // 控制頁面切換的「大腦」
-        function showPage(pageId) {
-            // 隱藏所有頁面
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            // 顯示被點擊的頁面
-            document.getElementById(pageId).classList.add('active');
+  // --- 1. Firebase 驗證邏輯 (遵循 Rule 3) ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
         }
+      } catch (err) {
+        console.error("Auth Error:", err);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
-        function updateRate() {
-            const val = document.getElementById('hkd').value;
-            document.getElementById('twd').innerText = "台幣約：NT$ " + Math.round(val * 4.1);
-        }
-    </script>
-</body>
-</html>
+  // --- 2. 即時同步資料 (遵循 Rule 1 & 2) ---
+  useEffect(() => {
+    if (!user) return;
+
+    // 行程資料
+    const unsubItinerary = onSnapshot(
+      collection(db, 'artifacts', appId, 'public', 'data', 'itinerary'),
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setItinerary(data.sort((a, b) => (a.time || "").localeCompare(b.time || "")));
+      },
+      (err) => console.error(err)
+    );
+
+    // 記帳資料
+    const unsubExpenses = onSnapshot(
+      collection(db, 'artifacts', appId, 'public', 'data', 'expenses'),
+      (snapshot) => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setExpenses(data.sort((a, b) => b.timestamp?.seconds - a.timestamp?.seconds));
+      },
+      (err) => console.error(err)
+    );
+
+    // 行李資料
+    const unsubLuggage = onSnapshot(
+      collection(db, 'artifacts', appId, 'public', 'data', 'luggage'),
+      (snapshot) => {
+        setLuggage(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      },
+      (err) => console.error(err)
+    );
+
+    return () => { unsubItinerary(); unsubExpenses(); unsubLuggage(); };
+  }, [user]);
+
+  // --- 操作函數 ---
+  const toggleLuggage = async (item) => {
+    const ref = doc(db, 'artifacts', appId, 'public', 'data', 'luggage', item.id);
+    await updateDoc(ref, { checked: !item.checked });
+  };
+
+  // --- 頁面：首頁 ---
+  const HomePage = () => (
+    <div className="p-6 pb-40 animate-in fade-in zoom-in duration-500">
+      <h1 className={styles.heading}>
+        <span className="bg-red-500 text-white px-3 py-1 rounded-xl shadow-[4px_4px_0px_#000]">HK MO</span> 
+        2026 ✈️
+      </h1>
+      
+      <div className="grid grid-cols-3 gap-4">
+        {/* 行程卡片 (Hero) */}
+        <div 
+          onClick={() => setCurrentPage('itinerary')}
+          className={`${styles.card} col-span-2 row-span-1 bg-red-500 text-white p-6 h-52 flex flex-col justify-end`}
+        >
+          <Calendar size={48} strokeWidth={3} className="mb-auto" />
+          <div>
+            <span className="text-3xl font-black block leading-none text-white">行程表</span>
+            <span className="text-sm font-bold opacity-80 italic">TIME TO EXPLORE</span>
+          </div>
+        </div>
+
+        {/* 記帳本 */}
+        <div 
+          onClick={() => setCurrentPage('ledger')}
+          className={`${styles.card} bg-[#00A373] text-white flex flex-col items-center justify-center p-4`}
+        >
+          <Calculator size={36} strokeWidth={3} />
+          <span className="text-xl font-black mt-2">記帳</span>
+        </div>
+
+        {/* 行李清單 */}
+        <div 
+          onClick={() => setCurrentPage('luggage')}
+          className={`${styles.card} bg-white flex flex-col items-center justify-center p-4 text-black`}
+        >
+          <Luggage size={32} strokeWidth={3} />
+          <span className="text-lg font-black mt-1">行李</span>
+        </div>
+
+        {/* 伴手禮 */}
+        <div className={`${styles.card} bg-yellow-400 flex flex-col items-center justify-center p-4 text-black`}>
+          <ShoppingBag size={32} strokeWidth={3} />
+          <span className="text-lg font-black mt-1">伴手禮</span>
+        </div>
+
+        {/* 設定 */}
+        <div className={`${styles.card} bg-black text-white flex flex-col items-center justify-center p-4`}>
+          <Settings size={32} strokeWidth={3} />
+          <span className="text-lg font-black mt-1">設定</span>
+        </div>
+      </div>
+
+      <div className={`${styles.card} mt-8 p-6 bg-white flex items-center justify-between`}>
+        <div>
+          <h4 className="font-black text-gray-400 text-xs">即時匯率</h4>
+          <p className="font-black text-xl">1 HKD = 4.15 TWD</p>
+        </div>
+        <div className="w-12 h-12 bg-yellow-400 rounded-full border-4 border-black flex items-center justify-center shadow-[2px_2px_0px_#000]">
+          <DollarSign size={20} strokeWidth={4} />
+        </div>
+      </div>
+    </div>
+  );
+
+  // --- 頁面：行程表 ---
+  const ItineraryPage = () => (
+    <div className="p-6 pb-40 animate-in slide-in-from-right duration-300">
+      <button onClick={() => setCurrentPage('home')} className="mb-6 flex items-center font-black text-xl italic group">
+        <ArrowLeft className="mr-2 group-active:-translate-x-2 transition-transform" /> 返回
+      </button>
+      
+      <div className="flex overflow-x-auto gap-3 pb-6 no-scrollbar">
+        {['DAY 1', 'DAY 2', 'DAY 3', 'DAY 4'].map((day, i) => (
+          <div key={day} className={`flex-shrink-0 px-8 py-3 border-[4px] border-black rounded-full font-black text-lg shadow-[4px_4px_0px_#000] ${i === 0 ? 'bg-red-500 text-white' : 'bg-white'}`}>
+            {day}
+          </div>
+        ))}
+      </div>
+
+      <h2 className="text-3xl font-black mb-8 italic flex items-center gap-2">
+        <Clock className="text-red-500" /> 時間軸
+      </h2>
+
+      <div className="relative border-l-[6px] border-black ml-4 pl-10 space-y-10">
+        {itinerary.length > 0 ? itinerary.map((item, idx) => (
+          <div key={idx} className={`${styles.card} p-5 relative`}>
+            <div className="absolute -left-[54px] top-6 w-8 h-8 bg-white border-[4px] border-black rounded-full flex items-center justify-center shadow-[3px_3px_0px_#000]">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+            </div>
+            <span className="bg-black text-white px-3 py-1 rounded-lg font-black text-xs mb-2 inline-block">
+              {item.time}
+            </span>
+            <h3 className="text-2xl font-black">{item.title}</h3>
+            <p className="text-gray-500 font-bold mt-1">{item.note}</p>
+          </div>
+        )) : (
+          <div className="text-gray-400 italic font-black py-10">尚無行程，點擊下方新增</div>
+        )}
+      </div>
+    </div>
+  );
+
+  // --- 頁面：記帳本 ---
+  const LedgerPage = () => {
+    const [inputAmount, setInputAmount] = useState('');
+    const [currency, setCurrency] = useState('HKD');
+    const rate = currency === 'HKD' ? 4.15 : 4.02;
+
+    const saveExpense = async () => {
+      if (!inputAmount || !user) return;
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), {
+        amount: parseFloat(inputAmount),
+        currency,
+        twd: Math.round(inputAmount * rate),
+        timestamp: serverTimestamp(),
+        userId: user.uid
+      });
+      setInputAmount('');
+      setCurrentPage('home');
+    };
+
+    return (
+      <div className="p-6 pb-40 animate-in slide-in-from-right duration-300">
+        <button onClick={() => setCurrentPage('home')} className="mb-6 flex items-center font-black text-xl italic">
+          <ArrowLeft className="mr-2" /> 返回
+        </button>
+
+        <div className="bg-yellow-400 border-[4px] border-black rounded-[32px] p-8 shadow-[10px_10px_0px_#000] mb-10">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-black text-2xl italic underline">開支計算機</h3>
+            <div className="flex bg-black p-1 rounded-2xl">
+              <button 
+                onClick={() => setCurrency('HKD')}
+                className={`px-4 py-1 rounded-xl font-black text-sm transition-colors ${currency === 'HKD' ? 'bg-white text-black' : 'text-white'}`}
+              >HKD</button>
+              <button 
+                onClick={() => setCurrency('MOP')}
+                className={`px-4 py-1 rounded-xl font-black text-sm transition-colors ${currency === 'MOP' ? 'bg-white text-black' : 'text-white'}`}
+              >MOP</button>
+            </div>
+          </div>
+
+          <div className="relative mb-6">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-3xl">$</span>
+            <input 
+              type="number" 
+              placeholder="0.00"
+              className={`${styles.input} pl-12 text-black`}
+              value={inputAmount}
+              onChange={(e) => setInputAmount(e.target.value)}
+            />
+          </div>
+
+          <div className="flex justify-between items-center px-2">
+            <span className="font-black text-gray-700 italic">換算台幣</span>
+            <span className="text-4xl font-black italic">NT$ {Math.round((inputAmount || 0) * rate)}</span>
+          </div>
+
+          <button 
+            onClick={saveExpense}
+            className="w-full mt-8 bg-black text-white p-5 rounded-[24px] font-black text-2xl shadow-[6px_6px_0px_#00A373] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
+          >
+            存入紀錄 💰
+          </button>
+        </div>
+
+        <h3 className="text-2xl font-black mb-6 italic border-b-[6px] border-black inline-block uppercase">近期開支</h3>
+        <div className="space-y-4">
+          {expenses.map((exp, i) => (
+            <div key={i} className={`${styles.card} p-4 flex justify-between items-center`}>
+              <div>
+                <span className="font-black text-xl">{exp.currency} {exp.amount}</span>
+                <p className="text-[10px] text-gray-400 font-bold uppercase">
+                  {exp.timestamp?.seconds ? new Date(exp.timestamp.seconds * 1000).toLocaleTimeString() : '同步中'}
+                </p>
+              </div>
+              <div className="text-2xl font-black text-[#00A373] italic">NT$ {exp.twd}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // --- 頁面：行李清單 ---
+  const LuggagePage = () => (
+    <div className="p-6 pb-40 animate-in slide-in-from-right duration-300">
+      <button onClick={() => setCurrentPage('home')} className="mb-6 flex items-center font-black text-xl italic">
+        <ArrowLeft className="mr-2" /> 返回
+      </button>
+      <h2 className="text-3xl font-black mb-8 italic">行李檢核</h2>
+      <div className="space-y-4">
+        {luggage.map((item) => (
+          <div 
+            key={item.id} 
+            onClick={() => toggleLuggage(item)}
+            className={`${styles.card} p-5 flex items-center justify-between ${item.checked ? 'bg-gray-100 opacity-60' : 'bg-white'}`}
+          >
+            <span className={`text-xl font-black ${item.checked ? 'line-through decoration-[4px]' : ''}`}>{item.name}</span>
+            <div className={`w-8 h-8 border-4 border-black rounded-xl flex items-center justify-center ${item.checked ? 'bg-green-500' : 'bg-white'}`}>
+              {item.checked && <Check color="white" strokeWidth={5} size={20} />}
+            </div>
+          </div>
+        ))}
+        <button 
+          onClick={async () => {
+            const name = prompt("輸入物品名稱：");
+            if(name) await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'luggage'), { name, checked: false });
+          }}
+          className={`${styles.card} w-full p-4 border-dashed border-gray-400 text-gray-400 flex items-center justify-center gap-2`}
+        >
+          <Plus size={20} /> 新增物品
+        </button>
+      </div>
+    </div>
+  );
+
+  if (loading) return (
+    <div className="h-screen bg-[#FDF5E6] flex flex-col items-center justify-center font-black italic">
+      <div className="text-6xl animate-bounce mb-4">✈️</div>
+      <div className="text-2xl tracking-widest animate-pulse">LOADING...</div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#FDF5E6] text-black max-w-md mx-auto relative overflow-x-hidden border-x-[4px] border-black shadow-2xl">
+      
+      {/* 渲染頁面 */}
+      {currentPage === 'home' && <HomePage />}
+      {currentPage === 'itinerary' && <ItineraryPage />}
+      {currentPage === 'ledger' && <LedgerPage />}
+      {currentPage === 'luggage' && <LuggagePage />}
+
+      {/* 懸浮計算機 (全域) */}
+      <div 
+        onClick={() => setShowQuickCalc(true)}
+        className="fixed bottom-32 right-8 w-16 h-16 bg-[#00A373] border-[4px] border-black rounded-[24px] shadow-[6px_6px_0px_#000] flex items-center justify-center cursor-pointer active:scale-90 z-40 transition-transform"
+      >
+        <DollarSign color="white" size={32} strokeWidth={4} />
+      </div>
+
+      {/* 底部置中長條按鈕 (功能) */}
+      <div className="fixed bottom-0 left-0 right-0 p-8 flex justify-center z-30 pointer-events-none">
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className={`${styles.button} w-full max-w-sm pointer-events-auto`}
+        >
+          <Plus size={28} strokeWidth={4} /> 新增紀錄
+        </button>
+      </div>
+
+      {/* 快速換算 Overlay */}
+      {showQuickCalc && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-8 animate-in fade-in duration-200">
+          <div className={`${styles.card} w-full bg-yellow-400 p-8 relative animate-in zoom-in duration-300`}>
+            <button onClick={() => setShowQuickCalc(false)} className="absolute top-4 right-4 bg-black text-white rounded-full p-1"><X size={24} strokeWidth={4} /></button>
+            <h2 className="text-3xl font-black mb-6 italic underline">快速換算器</h2>
+            <input 
+              type="number" 
+              placeholder="輸入港幣 HKD" 
+              className={styles.input} 
+              autoFocus
+              onChange={(e) => {
+                const res = Math.round(e.target.value * 4.15);
+                document.getElementById('quick-res-text').innerText = `NT$ ${res}`;
+              }} 
+            />
+            <div id="quick-res-text" className="text-6xl font-black mt-8 italic text-center drop-shadow-md">NT$ 0</div>
+          </div>
+        </div>
+      )}
+
+      {/* 新增選單 Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end animate-in fade-in duration-200">
+          <div className="w-full bg-white border-t-[6px] border-black rounded-t-[40px] p-10 animate-in slide-in-from-bottom duration-300">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-black italic underline uppercase">新增項目</h2>
+              <button onClick={() => setShowAddModal(false)} className="bg-gray-100 p-2 rounded-full"><X size={24} strokeWidth={4} /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-6 mb-10">
+              <button 
+                onClick={async () => {
+                  const title = prompt("行程標題：");
+                  const time = prompt("時間 (例 14:30)：");
+                  if(title && time) await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'itinerary'), { title, time, note: '新增行程', timestamp: serverTimestamp() });
+                  setShowAddModal(false);
+                }}
+                className={`${styles.card} p-6 flex flex-col items-center gap-2 hover:bg-red-50`}
+              >
+                <Calendar className="text-red-500" size={32} />
+                <span className="font-black text-black">新增行程</span>
+              </button>
+              <button 
+                onClick={() => { setCurrentPage('ledger'); setShowAddModal(false); }}
+                className={`${styles.card} p-6 flex flex-col items-center gap-2 hover:bg-green-50`}
+              >
+                <Calculator className="text-green-600" size={32} />
+                <span className="font-black text-black">新增記帳</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
