@@ -1,0 +1,3236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#060a18">
+<meta name="apple-mobile-web-app-title" content="港澳 2026">
+<!-- PWA Manifest (inline) -->
+<link rel="manifest" href="data:application/manifest+json,{
+  &quot;name&quot;: &quot;港澳 2026&quot;,
+  &quot;short_name&quot;: &quot;港澳 2026&quot;,
+  &quot;description&quot;: &quot;魚千千 ＆ 莊47 港澳旅遊手冊&quot;,
+  &quot;start_url&quot;: &quot;.&quot;,
+  &quot;display&quot;: &quot;standalone&quot;,
+  &quot;background_color&quot;: &quot;#060a18&quot;,
+  &quot;theme_color&quot;: &quot;#060a18&quot;,
+  &quot;orientation&quot;: &quot;portrait&quot;,
+  &quot;icons&quot;: [{
+    &quot;src&quot;: &quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%23060a18'/><text y='140' x='20' font-size='140'>✈</text></svg>&quot;,
+    &quot;sizes&quot;: &quot;192x192&quot;,
+    &quot;type&quot;: &quot;image/svg+xml&quot;
+  }]
+}">
+<!-- Apple touch icons -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%23060a18'/><text y='130' x='15' font-size='120'>✈</text></svg>">
+<title>港澳 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ═══ VARIABLES ═══ */
+:root {
+  --night:   #060a18;
+  --night-2: #0d1530;
+  --night-3: #1a2548;
+  --gold:    #f5c842;
+  --mint:    #a8e8c0;
+  --bright:  rgba(255,255,255,0.92);
+  --mid:     rgba(255,255,255,0.60);
+  --dim:     rgba(255,255,255,0.45);
+  --border:  rgba(255,255,255,0.08);
+  --border-gold: rgba(245,200,66,0.20);
+  --tab-h:   64px;
+  --safe-b:  env(safe-area-inset-bottom, 0px);
+}
+
+/* ═══ RESET ═══ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+ul, ol, li { list-style:none; }
+input, select, textarea, button { font-family:'Noto Sans TC',sans-serif; }
+input, select, textarea { font-size:16px !important; } /* prevent iOS zoom */
+
+/* ═══ BASE ═══ */
+html { height:100%; height:100dvh; }
+body {
+  height:100%; height:100dvh;
+  background:var(--night);
+  color:var(--bright);
+  font-family:'Noto Sans TC',sans-serif;
+  font-weight:300;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ═══ SPA SHELL ═══ */
+#app {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  /* In standalone PWA mode, account for status bar */
+  padding-top: env(safe-area-inset-top, 0px);
+  display: flex;
+  flex-direction: column;
+  background: var(--night);
+}
+
+#pages {
+  flex:1;
+  min-height:0;
+  position:relative;
+  overflow:hidden;
+}
+
+/* ═══ PAGES ═══ */
+.page {
+  position:absolute;
+  inset:0;
+  display:none;
+  background:var(--night);
+}
+
+/* Scrollable pages (home, itinerary) */
+#page-home, #page-itinerary {
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* Fixed layout pages (tools, transport, checkin) */
+#page-food, #page-flights, #page-tips {
+  display:none;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.page.active { display:block; }
+#page-food.active, #page-flights.active, #page-tips.active { display:flex; }
+
+/* ═══ TAB BAR ═══ */
+.tab-bar {
+  flex-shrink: 0;
+  background: rgba(6,10,24,0.98);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  z-index: 9999;
+}
+
+/* 按鈕列 — 固定 54px */
+.tab-bar-inner {
+  display: flex;
+  align-items: center;
+  height: 54px;
+  flex-shrink: 0;
+}
+
+/* safe area 墊高 — 只在 iPhone 有值 */
+.tab-bar-safe {
+  height: env(safe-area-inset-bottom, 0px);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.35);
+  transition: color .15s;
+  padding: 0;
+  position: relative;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.tab-btn.active { color: var(--gold); }
+
+.tab-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 22%; right: 22%;
+  height: 2px;
+  background: var(--gold);
+  border-radius: 0 0 3px 3px;
+}
+
+.tab-btn .ti { display: flex; align-items: center; justify-content: center; }
+.tab-btn .ti svg { width: 22px; height: 22px; }
+.tab-btn .tl { font-size: 10px; letter-spacing: 0.04em; line-height: 1; }
+
+/* ═══ SHARED ═══ */
+.container { max-width:720px; margin:0 auto; padding:0 16px; }
+
+.page-hero {
+  position:relative;
+  height:130px;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.page-hero svg { position:absolute; inset:0; width:100%; height:100%; }
+.page-hero-overlay {
+  position:absolute; inset:0;
+  background:linear-gradient(to bottom,rgba(6,10,24,.3),rgba(6,10,24,.75));
+  display:flex; flex-direction:column; justify-content:flex-end;
+  padding:16px 20px;
+}
+.page-hero-label { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--mid); margin-bottom:4px; }
+.page-hero-title { font-family:'Noto Serif TC',serif; font-size:22px; font-weight:600; color:#fff; }
+
+/* Info blocks */
+.info-block { margin:0 16px 16px; background:var(--night-2); border:1px solid var(--border); border-radius:14px; padding:16px; }
+.info-block-title { display:flex; align-items:center; gap:8px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); margin-bottom:14px; }
+.info-row { display:flex; align-items:center; gap:10px; padding:10px 0; }
+.info-row + .info-row { border-top:1px solid var(--border); }
+.info-badge { font-size:10px; font-weight:600; padding:3px 8px; border-radius:999px; letter-spacing:.06em; flex-shrink:0; }
+.info-badge.out { background:rgba(168,232,192,.15); color:var(--mint); border:1px solid rgba(168,232,192,.3); }
+.info-badge.ret { background:rgba(245,200,66,.12); color:var(--gold); border:1px solid rgba(245,200,66,.25); }
+.info-flight-num { font-size:13px; font-weight:500; color:var(--bright); flex-shrink:0; min-width:52px; }
+.info-route { display:flex; align-items:center; flex:1; gap:6px; }
+.info-pt { display:flex; flex-direction:column; align-items:center; }
+.info-pt.right { align-items:flex-end; }
+.info-time { font-family:'Playfair Display',serif; font-size:16px; color:var(--bright); line-height:1; }
+.info-city { font-size:10px; color:var(--mid); }
+.info-term { font-size:9px; color:var(--dim); margin-left:3px; }
+.info-line { display:flex; align-items:center; flex:1; gap:3px; position:relative; }
+.info-bar { flex:1; height:1px; background:var(--border); }
+.info-plane { font-size:12px; color:var(--mid); }
+.info-dur { position:absolute; top:-14px; left:50%; transform:translateX(-50%); font-size:9px; color:var(--dim); white-space:nowrap; }
+.info-date { font-size:11px; color:var(--gold); font-weight:500; flex-shrink:0; }
+.info-divider { height:1px; background:var(--border); margin:4px 0; }
+
+/* ═══ HOME PAGE ═══ */
+.home-hero {
+  position:relative;
+  height:52vh;
+  min-height:260px;
+  overflow:hidden;
+}
+.home-hero svg.hero-scene { position:absolute; inset:0; width:100%; height:100%; }
+.home-hero-content {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+  padding-bottom:28px;
+  text-align:center;
+}
+.home-eyebrow { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--mid); margin-bottom:8px; }
+.home-title { font-family:'Noto Serif TC',serif; font-size:clamp(26px,7vw,38px); font-weight:700; line-height:1.15; letter-spacing:.04em; }
+.home-title .hk { color:var(--gold); }
+.home-title .sep { font-size:.45em; color:rgba(255,255,255,.3); margin:0 6px; }
+.home-title .mac { color:var(--mint); }
+.home-date { margin-top:10px; display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.1); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:6px 16px; font-size:12px; color:rgba(255,255,255,.85); letter-spacing:.06em; }
+
+/* Countdown */
+.hero-countdown { display:flex; align-items:center; gap:5px; margin-top:14px; justify-content:center; }
+.hcd-unit { display:flex; flex-direction:column; align-items:center; gap:2px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:9px; padding:7px 10px; min-width:46px; backdrop-filter:blur(8px); }
+.hcd-num { font-family:'Playfair Display',serif; font-size:22px; color:#fff; line-height:1; font-weight:700; }
+.hcd-unit .hcd-label { font-size:9px; color:rgba(255,255,255,.45); letter-spacing:.1em; }
+.hcd-sep { font-size:18px; color:rgba(255,255,255,.3); margin-bottom:14px; }
+.hcd-label-main { font-size:10px; color:rgba(255,255,255,.4); letter-spacing:.2em; text-transform:uppercase; margin-top:6px; }
+
+/* Home body */
+.home-body { padding:16px 0 24px; }
+.home-block { background:var(--night-2); border:1px solid var(--border); border-radius:14px; padding:16px; margin:0 16px 12px; }
+.home-block-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.hb-label { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); }
+.hb-more { font-size:11px; color:var(--mid); background:none; border:none; cursor:pointer; }
+
+/* Weather */
+.weather-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.weather-city { background:var(--night-3); border:1px solid var(--border); border-radius:10px; padding:12px; min-height:80px; display:flex; flex-direction:column; }
+.wx-loading { font-size:12px; color:var(--dim); margin:auto; }
+.wx-city-name { font-size:10px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin-bottom:6px; }
+.wx-main { display:flex; align-items:flex-end; gap:8px; margin-bottom:4px; }
+.wx-icon { font-size:26px; line-height:1; }
+.wx-temp { font-family:'Playfair Display',serif; font-size:30px; color:var(--bright); line-height:1; }
+.wx-unit { font-size:13px; color:var(--mid); align-self:flex-start; margin-top:3px; }
+.wx-desc { font-size:11px; color:var(--mid); margin-bottom:4px; }
+.wx-details { display:flex; gap:8px; flex-wrap:wrap; }
+.wx-detail { font-size:10px; color:var(--dim); }
+.wx-error { font-size:11px; color:var(--dim); text-align:center; }
+.weather-updated { font-size:9px; color:var(--dim); }
+
+/* Flight summary */
+.hf-row { display:flex; align-items:center; gap:8px; padding:9px 0; }
+.hf-row + .hf-row { border-top:1px solid var(--border); }
+.hf-dir { font-size:10px; font-weight:600; padding:3px 8px; border-radius:999px; flex-shrink:0; }
+.hf-dir.out { background:rgba(168,232,192,.12); color:var(--mint); }
+.hf-dir.ret { background:rgba(245,200,66,.1); color:var(--gold); }
+.hf-num { font-size:12px; font-weight:500; color:var(--bright); flex-shrink:0; }
+.hf-route { flex:1; font-size:11px; color:var(--mid); }
+.hf-date { font-size:11px; color:var(--gold); flex-shrink:0; }
+
+/* Day cards */
+.hd-card { display:flex; align-items:center; gap:12px; padding:10px 12px; background:var(--night-3); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; cursor:pointer; }
+.hd-card:last-child { margin-bottom:0; }
+.hd-num { font-family:'Playfair Display',serif; font-size:24px; color:var(--border); font-weight:700; flex-shrink:0; width:36px; }
+.hd-info { flex:1; min-width:0; }
+.hd-title { font-size:13px; font-weight:500; color:var(--bright); }
+.hd-sub { font-size:11px; color:var(--mid); }
+.hd-tag { font-size:9px; font-weight:600; padding:3px 8px; border-radius:999px; letter-spacing:.06em; flex-shrink:0; }
+.tag-hk { background:rgba(83,183,232,.1); color:#53b7e8; border:1px solid rgba(83,183,232,.2); }
+.tag-mac { background:rgba(168,232,192,.1); color:var(--mint); border:1px solid rgba(168,232,192,.2); }
+
+/* Home ledger mini */
+.home-ldg-quick { display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+.home-ldg-input { background:var(--night-3); border:1px solid var(--border); border-radius:8px; color:var(--bright); padding:8px 10px; flex:1; min-width:0; outline:none; }
+.home-ldg-input:focus { border-color:var(--border-gold); }
+.home-ldg-btn { background:var(--gold); color:var(--night); border:none; border-radius:8px; width:36px; font-size:18px; font-weight:700; cursor:pointer; flex-shrink:0; }
+.home-ldg-item { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:12px; }
+.home-ldg-item:last-child { border-bottom:none; }
+.home-ldg-item-desc { color:var(--mid); flex:1; }
+.home-ldg-item-amt { color:var(--gold); font-family:'Playfair Display',serif; font-size:13px; margin-left:8px; }
+.home-ldg-summary { margin-top:10px; padding:10px 12px; background:rgba(245,200,66,.06); border:1px solid var(--border-gold); border-radius:8px; display:flex; justify-content:space-between; align-items:baseline; }
+.home-ldg-summary span:first-child { font-size:11px; color:var(--dim); }
+.home-ldg-summary span:last-child { font-family:'Playfair Display',serif; font-size:15px; color:var(--gold); }
+.home-ldg-empty { font-size:12px; color:var(--dim); text-align:center; padding:10px 0; }
+
+/* ═══ TRANSPORT PAGE ═══ */
+.mtr-page { display:flex; flex-direction:column; flex:1; min-height:0; background:var(--night); overflow:hidden; }
+
+/* Category tabs */
+.transport-cats { display:flex; border-bottom:1px solid var(--border); flex-shrink:0; }
+.tcat { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:11px 4px 9px; background:none; border:none; cursor:pointer; color:var(--dim); position:relative; transition:color .2s; -webkit-user-select:none; user-select:none; }
+.tcat::after { content:''; position:absolute; bottom:0; left:10%; right:10%; height:2px; background:var(--gold); transform:scaleX(0); transition:transform .2s; border-radius:2px 2px 0 0; }
+.tcat.active { color:var(--bright); }
+.tcat.active::after { transform:scaleX(1); }
+.tcat-icon { font-size:18px; line-height:1; }
+.tcat-label { font-size:10px; letter-spacing:.04em; }
+
+.transport-panel { display:none; flex:1; min-height:0; overflow:hidden; flex-direction:column; }
+.transport-panel.active { display:flex; }
+
+/* MTR */
+.mtr-line-strip { display:flex; overflow-x:auto; scrollbar-width:none; flex-shrink:0; border-bottom:1px solid var(--border); }
+.mtr-line-strip::-webkit-scrollbar { display:none; }
+.mtr-line-btn { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 10px; background:none; border:none; cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; -webkit-user-select:none; user-select:none; }
+.mtr-line-btn.active { border-bottom-color:var(--line-color,var(--gold)); }
+.mtr-code { font-size:9px; font-weight:700; padding:2px 5px; border-radius:3px; color:#fff; }
+.mtr-line-name { font-size:9px; color:var(--dim); white-space:nowrap; }
+.mtr-hero { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; background:var(--night-2); border-bottom:1px solid var(--border); flex-shrink:0; gap:8px; }
+.mtr-hero-left { display:flex; align-items:center; gap:8px; }
+.mtr-hero-code { font-size:12px; font-weight:700; padding:4px 8px; border-radius:4px; color:#fff; }
+.mtr-hero-name { font-family:'Noto Serif TC',serif; font-size:14px; font-weight:600; color:var(--bright); }
+.mtr-hero-count { font-size:10px; color:var(--dim); }
+.mtr-hero-right { display:flex; align-items:center; gap:6px; }
+.mtr-term { font-size:11px; color:var(--mid); }
+.mtr-arrow { font-size:12px; color:var(--dim); }
+.mtr-stns-wrap { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; }
+.mtr-srow { display:flex; align-items:stretch; cursor:pointer; }
+.mtr-track { display:flex; flex-direction:column; align-items:center; width:44px; flex-shrink:0; padding:0 4px; }
+.mtr-seg { flex:1; width:3px; background:var(--line-color,var(--border)); min-height:8px; }
+.mtr-dot { width:10px; height:10px; border-radius:50%; background:var(--night-2); border:2.5px solid var(--line-color,var(--border)); flex-shrink:0; z-index:1; }
+.mtr-dot.xfer { width:13px; height:13px; background:var(--line-color,var(--border)); border-color:#fff; }
+.mtr-sname { flex:1; display:flex; align-items:center; justify-content:space-between; padding:10px 12px 10px 0; border-bottom:1px solid var(--border); min-width:0; }
+.mtr-sname-text { font-size:13px; color:var(--bright); }
+.mtr-sname-text.xfer { font-weight:600; }
+.mtr-xbadges { display:flex; gap:4px; margin-top:4px; flex-wrap:wrap; }
+.mtr-xb { font-size:8px; font-weight:700; padding:1px 5px; border-radius:3px; color:#fff; }
+
+/* Ferry & Tram panels */
+.tp-scroll { flex:1; min-height:0; overflow-y:auto; padding:16px 16px 32px; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; box-sizing:border-box; width:100%; }
+.tp-section-title { font-size:11px; font-weight:500; letter-spacing:.1em; color:var(--gold); text-transform:uppercase; margin-bottom:8px; }
+.tp-desc { font-size:12px; color:var(--mid); line-height:1.7; margin-bottom:14px; }
+.tp-info-card { background:var(--night-2); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:12px; }
+.tp-info-row { display:flex; align-items:baseline; gap:10px; padding:10px 14px; border-bottom:1px solid var(--border); }
+.tp-info-row:last-child { border-bottom:none; }
+.tp-info-label { font-size:10px; color:var(--dim); min-width:56px; flex-shrink:0; }
+.tp-info-val { font-size:12px; color:var(--bright); }
+.tp-tip-box { background:rgba(245,200,66,.06); border:1px solid rgba(245,200,66,.15); border-radius:12px; padding:14px; margin-top:16px; }
+.tp-tip-title { font-size:12px; font-weight:500; color:var(--gold); margin-bottom:6px; }
+.tp-tip-text { font-size:12px; color:var(--mid); line-height:1.7; }
+.tp-route-card { background:var(--night-2); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:10px; }
+.tp-route-header { font-size:12px; font-weight:600; color:rgba(255,255,255,.9); padding:9px 14px; }
+.tp-route-body { padding:4px 0 8px; }
+.tp-route-row { font-size:12px; color:var(--mid); padding:6px 14px; }
+.tp-route-row.tip { color:var(--gold); font-size:11px; }
+
+/* Ferry tabs */
+.ferry-route-tabs { display:flex; gap:8px; margin-bottom:14px; }
+.ferry-rtab { flex:1; padding:7px 8px; background:var(--night-3); border:1px solid var(--border); border-radius:8px; color:var(--dim); font-size:11px; cursor:pointer; transition:all .2s; }
+.ferry-rtab.active { background:rgba(83,183,232,.12); border-color:rgba(83,183,232,.4); color:#53b7e8; }
+.ferry-route-panel { display:none; }
+.ferry-route-panel.active { display:block; }
+
+/* Ferry timetable */
+.ferry-timetable { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+.ferry-tt-col { background:var(--night-2); border:1px solid var(--border); border-radius:12px; overflow:hidden; min-width:0; }
+.ferry-tt-dir { font-size:10px; font-weight:600; padding:7px 10px; letter-spacing:.04em; border-bottom:1px solid var(--border); }
+.ferry-tt-dir.hk { background:rgba(180,30,30,.2); color:#f08080; }
+.ferry-tt-dir.mac { background:rgba(30,100,180,.2); color:#80b4f0; }
+.ferry-tt-head { display:flex; justify-content:space-between; padding:5px 10px; font-size:9px; color:var(--dim); border-bottom:1px solid var(--border); }
+.ferry-tt-sub { font-size:9px; color:var(--gold); padding:4px 10px 2px; background:rgba(245,200,66,.04); }
+.ferry-tt-row { display:flex; justify-content:space-between; padding:4px 10px; font-size:10px; color:var(--mid); border-bottom:1px solid rgba(255,255,255,.02); }
+.ferry-tt-row span:last-child { color:var(--bright); font-weight:500; }
+.ferry-fare-title { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin:14px 0 8px; }
+.ferry-fare-table { background:var(--night-2); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:14px; }
+.ffe-head { display:grid; grid-template-columns:80px 1fr 1fr; background:rgba(255,255,255,.04); border-bottom:1px solid var(--border); }
+.ffe-group { display:flex; flex-direction:column; border-left:1px solid var(--border); }
+.ffe-group-label { font-size:9px; color:var(--dim); text-align:center; padding:4px 2px 2px; }
+.ffe-sub-row { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--border); }
+.ffe-sub-row span { font-size:9px; color:var(--dim); text-align:center; padding:3px 2px; }
+.ffe-sub-row span + span { border-left:1px solid var(--border); }
+.ffe-row { display:grid; grid-template-columns:80px 1fr 1fr 1fr 1fr; border-top:1px solid var(--border); align-items:center; }
+.ffe-row.wan { grid-template-columns:80px 1fr 1fr; }
+.ffe-row.special { grid-template-columns:80px 1fr; }
+.ffe-row.highlight { background:rgba(83,183,232,.05); }
+.ffe-cell { font-size:11px; padding:8px 8px; }
+.ffe-cell.label { color:var(--mid); font-size:10px; border-right:1px solid var(--border); }
+.ffe-cell.full { color:var(--bright); font-size:11px; }
+.ffe-row span { font-size:11px; color:var(--bright); text-align:center; padding:8px 3px; border-left:1px solid var(--border); }
+.ffe-row.wan span { font-size:11px; color:var(--bright); text-align:center; padding:8px 3px; border-left:1px solid var(--border); }
+
+/* Jetfoil */
+.jet-tt-wrap { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; min-width:0; }
+.jet-tt-col { background:var(--night-2); border:1px solid var(--border); border-radius:12px; overflow:hidden; min-width:0; }
+.jet-tt-dir { font-size:10px; font-weight:600; padding:7px 10px; letter-spacing:.03em; border-bottom:1px solid var(--border); }
+.jet-tt-dir.hk { background:rgba(180,30,30,.2); color:#f08080; }
+.jet-tt-dir.mac { background:rgba(30,100,180,.2); color:#80b4f0; }
+.jet-tt-block { padding:8px 10px; border-bottom:1px solid var(--border); }
+.jet-tt-block:last-child { border-bottom:none; }
+.jet-tt-block.night { background:rgba(100,80,180,.05); }
+.jet-tt-label { font-size:9px; color:var(--gold); letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px; }
+.jet-tt-times { font-size:10px; color:var(--mid); line-height:1.7; }
+.jet-update-badge { font-size:10px; color:var(--gold); background:rgba(245,200,66,.08); border:1px solid rgba(245,200,66,.2); border-radius:6px; padding:5px 10px; margin-bottom:10px; }
+.jet-vip-badge { font-size:11px; font-weight:500; color:#d4a840; background:rgba(180,140,40,.1); border:1px solid rgba(180,140,40,.25); border-radius:6px; padding:7px 12px; margin-bottom:10px; }
+
+/* Tram */
+.tram-line { background:var(--night-2); border:1px solid var(--border); border-radius:12px; padding:8px 0; position:relative; }
+.tram-line::before { content:''; position:absolute; left:26px; top:16px; bottom:16px; width:3px; background:#e8a020; border-radius:2px; }
+.tram-stop { display:flex; align-items:center; gap:10px; padding:8px 14px; position:relative; }
+.tram-dot { width:10px; height:10px; border-radius:50%; background:var(--night-2); border:2px solid #e8a020; flex-shrink:0; z-index:1; margin-left:21px; }
+.tram-stop.terminus .tram-dot { width:12px; height:12px; background:#e8a020; border-color:#fff; }
+.tram-stop span:nth-child(2) { font-size:12px; color:var(--mid); flex:1; }
+.tram-stop.highlight span:nth-child(2), .tram-stop.terminus span:nth-child(2) { color:var(--bright); font-weight:500; }
+.tram-badge { font-size:9px; font-weight:600; padding:2px 6px; border-radius:999px; background:rgba(255,255,255,.08); color:var(--dim); }
+.tram-badge.gold { background:rgba(245,200,66,.12); color:var(--gold); border:1px solid rgba(245,200,66,.25); }
+
+/* ═══ ITINERARY PAGE ═══ */
+#page-itinerary { background:var(--night); padding:0 0 32px; }
+.hotel-item { background:var(--night-3); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:10px; position:relative; transition:border-color .15s; }
+.hotel-item:hover .hotel-item-actions { opacity:1; }
+.hotel-item-actions { position:absolute; top:10px; right:10px; display:flex; gap:4px; opacity:0; transition:opacity .15s; }
+.hotel-nights { font-size:10px; letter-spacing:.08em; color:var(--gold); margin-bottom:4px; text-transform:uppercase; }
+.hotel-name { font-size:13px; font-weight:500; color:var(--bright); margin-bottom:3px; }
+.hotel-sub { font-size:11px; color:var(--dim); }
+.add-hotel-btn { width:100%; padding:10px; background:transparent; border:1px dashed rgba(245,200,66,.25); color:var(--gold); font-size:12px; border-radius:10px; cursor:pointer; letter-spacing:.06em; transition:all .15s; }
+
+/* Day tabs */
+.itin-top { padding:0 16px; }
+.day-tabs { display:flex; gap:6px; padding:12px 0 8px; overflow-x:auto; scrollbar-width:none; }
+.day-tabs::-webkit-scrollbar { display:none; }
+.day-tab { flex-shrink:0; padding:8px 16px; background:var(--night-2); border:1px solid var(--border); border-radius:8px; color:var(--dim); font-size:12px; cursor:pointer; transition:all .2s; white-space:nowrap; -webkit-user-select:none; user-select:none; }
+.day-tab.active { background:var(--gold); color:var(--night); font-weight:600; border-color:var(--gold); }
+.itin-hint { font-size:10px; color:var(--dim); padding:4px 0 10px; letter-spacing:.04em; }
+.day-panel { display:none; }
+.day-panel.active { display:block; }
+.day-card { margin:0 16px 16px; background:var(--night-2); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+.day-meta { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--border); }
+.day-number { font-family:'Playfair Display',serif; font-size:32px; color:rgba(245,200,66,.15); font-weight:700; line-height:1; flex-shrink:0; }
+.day-info h3 { font-family:'Noto Serif TC',serif; font-size:15px; font-weight:600; color:var(--bright); margin-bottom:3px; }
+.day-info p { font-size:11px; color:var(--mid); }
+.day-tags { margin-left:auto; display:flex; gap:6px; }
+.day-tag { font-size:9px; font-weight:600; padding:3px 8px; border-radius:999px; letter-spacing:.06em; }
+.day-tag-hk { background:rgba(83,183,232,.1); color:#53b7e8; border:1px solid rgba(83,183,232,.2); }
+.day-tag-mac { background:rgba(168,232,192,.1); color:var(--mint); border:1px solid rgba(168,232,192,.2); }
+.timeline-wrap { padding:12px 16px 16px; position:relative; }
+.timeline-wrap::before { content:''; position:absolute; left:calc(16px + 68px); top:12px; bottom:16px; width:2px; background:rgba(255,255,255,.06); border-radius:2px; }
+.timeline-item { display:flex; align-items:stretch; margin-bottom:12px; }
+.timeline-time { font-size:11px; font-weight:500; color:var(--gold); padding:18px 12px 18px 0; text-align:right; line-height:1.4; width:60px; flex-shrink:0; outline:none; }
+[contenteditable]:empty::before { content:attr(placeholder); color:var(--dim); font-style:italic; }
+.timeline-dot { position:relative; }
+.timeline-dot::before { content:''; position:absolute; left:50%; top:22px; transform:translateX(-50%); width:8px; height:8px; border-radius:50%; background:var(--gold); border:2px solid var(--night-2); z-index:1; }
+.timeline-body { flex:1; background:var(--night-3); border:1px solid var(--border); border-radius:10px; padding:10px 12px 10px 10px; margin-left:10px; position:relative; transition:border-color .15s; display:flex; align-items:flex-start; gap:8px; }
+.timeline-body:focus-within { border-color:var(--border-gold); }
+.timeline-body-content { flex:1; min-width:0; }
+.drag-handle { display:none; } /* hidden, replaced by sort buttons */
+.sort-btns { display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
+.sort-btn { width:26px; height:26px; background:rgba(255,255,255,.06); border:1px solid var(--border); border-radius:6px; color:var(--dim); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; line-height:1; padding:0; }
+.sort-btn:hover { background:rgba(255,255,255,.12); color:var(--bright); }
+.sort-btn:active { transform:scale(.9); }
+.timeline-name { font-size:13px; font-weight:500; color:var(--bright); margin-bottom:4px; outline:none; }
+.timeline-desc { font-size:11px; color:var(--mid); outline:none; line-height:1.5; }
+.delete-btn { background:none; border:none; color:var(--dim); font-size:15px; cursor:pointer; padding:2px; flex-shrink:0; align-self:flex-start; margin-left:2px; transition:color .15s; }
+.delete-btn:hover { color:#f08080; }
+.timeline-mtr-row { display:flex; align-items:center; gap:8px; margin-top:7px; }
+.timeline-mtr-btn { font-size:10px; color:var(--dim); background:none; border:1px dashed rgba(255,255,255,.12); border-radius:999px; padding:3px 9px; cursor:pointer; transition:all .15s; }
+.timeline-mtr-btn:hover { color:rgba(255,255,255,.7); border-color:rgba(255,255,255,.28); }
+.add-item-btn { width:100%; padding:9px; background:transparent; border:1px dashed rgba(255,255,255,.1); color:var(--dim); font-size:12px; border-radius:8px; cursor:pointer; letter-spacing:.06em; transition:all .15s; margin-top:4px; }
+.add-item-btn:hover { border-color:rgba(255,255,255,.25); color:var(--mid); }
+
+/* ═══ TOOLS PAGE ═══ */
+#page-food { background:var(--night); }
+.tools-page { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.tools-tabs { display:flex; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--night); }
+.tool-tab { flex:1; padding:10px 2px; background:none; border:none; color:var(--dim); font-size:11px; letter-spacing:.04em; cursor:pointer; position:relative; transition:color .2s; -webkit-user-select:none; user-select:none; }
+.tool-tab::after { content:''; position:absolute; bottom:0; left:10%; right:10%; height:2px; background:var(--gold); border-radius:2px 2px 0 0; transform:scaleX(0); transition:transform .2s; }
+.tool-tab.active { color:var(--bright); }
+.tool-tab.active::after { transform:scaleX(1); }
+.tool-panel { display:none; flex:1; min-height:0; overflow:hidden; }
+.tool-panel.active { display:flex; flex-direction:column; }
+.tool-scroll { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; padding:16px; box-sizing:border-box; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; }
+
+/* FX */
+.fx-rates { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; width:100%; }
+.fx-rate-card { background:var(--night-2); border:1px solid var(--border); border-radius:12px; padding:12px; min-width:0; overflow:hidden; }
+.fx-pair { font-size:10px; color:var(--dim); margin-bottom:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fx-rate-val { font-family:'Playfair Display',serif; font-size:clamp(16px,4vw,22px); color:var(--bright); line-height:1; margin-bottom:3px; }
+.fx-rate-sub { font-size:9px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fx-loading { font-size:12px; color:var(--dim); text-align:center; padding:20px; grid-column:1/-1; }
+.fx-calc-box { background:var(--night-2); border:1px solid var(--border); border-radius:12px; padding:14px; width:100%; box-sizing:border-box; }
+.fx-calc-title { font-size:10px; color:var(--gold); letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px; }
+.fx-calc-input { width:100%; background:var(--night-3); border:1px solid var(--border); border-radius:8px; color:var(--bright); padding:10px 12px; margin-bottom:8px; box-sizing:border-box; outline:none; }
+.fx-calc-input:focus { border-color:var(--border-gold); }
+.fx-calc-select { width:100%; background:var(--night-3); border:1px solid var(--border); border-radius:8px; color:var(--bright); padding:10px 12px; margin-bottom:12px; box-sizing:border-box; outline:none; appearance:none; -webkit-appearance:none; }
+.fx-result { font-size:13px; color:var(--mid); line-height:1.9; }
+.fx-result .fx-line { display:flex; justify-content:space-between; align-items:baseline; padding:4px 0; border-bottom:1px solid var(--border); }
+.fx-result .fx-line:last-child { border-bottom:none; }
+.fx-result .fx-line span:last-child { font-size:15px; color:var(--bright); font-family:'Playfair Display',serif; }
+
+/* Ledger */
+.ldg-form { margin-bottom:12px; }
+.ldg-form-row { display:flex; gap:5px; margin-bottom:5px; flex-wrap:wrap; }
+.ldg-input { background:var(--night-2); border:1px solid var(--border); border-radius:8px; color:var(--bright); padding:9px 10px; font-size:13px; outline:none; min-width:0; }
+.ldg-input:focus { border-color:var(--border-gold); }
+.ldg-add-btn { background:var(--gold); color:var(--night); border:none; border-radius:8px; width:38px; font-size:18px; font-weight:700; cursor:pointer; flex-shrink:0; }
+.ldg-filters { display:flex; gap:5px; margin-bottom:12px; flex-wrap:wrap; }
+.ldg-filter { padding:4px 10px; font-size:11px; border-radius:999px; border:1px solid var(--border); background:none; color:var(--dim); cursor:pointer; transition:all .15s; }
+.ldg-filter.active { background:rgba(245,200,66,.1); border-color:rgba(245,200,66,.4); color:var(--gold); }
+.ledger-item { display:flex; align-items:flex-start; gap:8px; padding:10px 12px; background:var(--night-2); border:1px solid var(--border); border-radius:10px; margin-bottom:7px; }
+.ldg-item-left { flex:1; min-width:0; }
+.ldg-item-top { display:flex; align-items:center; gap:6px; margin-bottom:3px; flex-wrap:wrap; }
+.ldg-item-desc { font-size:12px; color:var(--bright); }
+.ldg-item-cat { font-size:10px; padding:1px 6px; border-radius:999px; background:rgba(255,255,255,.06); color:var(--mid); white-space:nowrap; }
+.ldg-item-meta { display:flex; gap:8px; font-size:10px; color:var(--mid); }
+.ldg-item-right { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0; }
+.ldg-item-amt { font-family:'Playfair Display',serif; font-size:14px; color:var(--gold); }
+.ldg-item-twd { font-size:10px; color:var(--dim); }
+.ldg-item-del { background:none; border:none; color:var(--dim); font-size:14px; cursor:pointer; padding:0; }
+.ldg-summary-wrap { margin-top:14px; border-radius:12px; overflow:hidden; border:1px solid var(--border-gold); }
+.ldg-summary-toggle { width:100%; display:flex; align-items:center; justify-content:space-between; padding:13px 16px; background:rgba(245,200,66,.08); border:none; cursor:pointer; font-size:12px; font-weight:500; color:var(--gold); letter-spacing:.04em; }
+.ldg-summary-arrow { font-size:16px; transition:transform .25s; display:inline-block; }
+.ldg-summary-arrow.open { transform:rotate(90deg); }
+.ldg-summary-body { background:var(--night-2); padding:0 14px; max-height:0; overflow:hidden; transition:max-height .35s ease,padding .25s; }
+.ldg-summary-body.open { padding:14px; max-height:900px; }
+.ldg-total-row { display:flex; justify-content:space-between; align-items:baseline; padding:5px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.ldg-total-row:last-child { border-bottom:none; }
+.ldg-total-row span:first-child { color:var(--mid); font-size:11px; }
+.ldg-total-row span:last-child { color:var(--bright); font-family:'Playfair Display',serif; font-size:13px; }
+.ldg-total-section { font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--gold); margin:12px 0 5px; padding-bottom:4px; border-bottom:1px solid var(--border-gold); }
+.ldg-grand-total { display:flex; justify-content:space-between; align-items:baseline; padding:8px 0 5px; }
+.ldg-grand-total span:first-child { font-size:12px; color:var(--bright); font-weight:500; }
+.ldg-grand-total span:last-child { font-family:'Playfair Display',serif; font-size:20px; color:var(--gold); }
+
+/* Checklist */
+.cl-header {
+  flex-shrink:0;
+  padding:12px 14px 8px;
+  border-bottom:1px solid var(--border);
+  background:var(--night);
+}
+.cl-tabs { display:flex; gap:0; margin-bottom:10px; background:var(--night-3); border-radius:10px; padding:3px; border:1px solid var(--border); }
+.cl-tab { flex:1; padding:7px 4px; font-size:12px; background:none; border:none; border-radius:7px; color:var(--dim); cursor:pointer; transition:all .15s; white-space:nowrap; -webkit-user-select:none; user-select:none; }
+.cl-tab.active { background:var(--night-2); color:var(--bright); border:1px solid var(--border); }
+.cl-add-row { display:flex; gap:7px; margin-bottom:8px; }
+.cl-add-row input { flex:1; background:var(--night-2); border:1px solid var(--border); border-radius:8px; color:var(--bright); padding:9px 12px; outline:none; min-width:0; }
+.cl-add-row input:focus { border-color:var(--border-gold); }
+.cl-progress { font-size:10px; color:var(--dim); text-align:center; letter-spacing:.06em; }
+.cl-scroll {
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  padding:10px 12px 16px;
+}
+.cl-item { display:flex; align-items:center; gap:9px; padding:8px 11px; background:var(--night-2); border:1px solid var(--border); border-radius:8px; margin-bottom:6px; -webkit-user-select:none; user-select:none; }
+.cl-item.done { opacity:.45; }
+.cl-item.done .cl-text { text-decoration:line-through; }
+.cl-check { width:18px; height:18px; border-radius:50%; border:2px solid rgba(255,255,255,.25); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; transition:all .15s; background:transparent; }
+.cl-item.done .cl-check { background:var(--gold); border-color:var(--gold); color:var(--night); }
+.cl-text { flex:1; font-size:13px; color:var(--bright); outline:none; border-radius:4px; padding:1px 3px; margin:0 -3px; transition:background .15s; cursor:text; line-height:1.4; -webkit-user-select:text; user-select:text; }
+.cl-text:focus { background:rgba(255,255,255,.06); }
+.cl-del { background:none; border:none; color:var(--dim); font-size:14px; cursor:pointer; padding:0 2px; flex-shrink:0; }
+
+/* Links */
+.links-add-btn { width:100%; padding:10px; background:transparent; border:1px dashed rgba(245,200,66,.25); color:var(--gold); font-size:12px; border-radius:10px; cursor:pointer; letter-spacing:.06em; margin-top:4px; transition:all .15s; }
+.link-card { display:flex; align-items:center; gap:10px; padding:12px 13px; background:var(--night-2); border:1px solid var(--border); border-radius:12px; margin-bottom:7px; text-decoration:none; cursor:pointer; -webkit-user-select:none; user-select:none; }
+.link-icon { font-size:18px; flex-shrink:0; }
+.link-info { flex:1; min-width:0; }
+.link-name { font-size:12px; font-weight:500; color:var(--bright); margin-bottom:2px; }
+.link-sub { font-size:10px; color:var(--dim); }
+.link-actions { display:flex; gap:4px; flex-shrink:0; }
+.link-act-btn { width:30px; height:30px; border-radius:7px; border:1px solid var(--border); background:none; color:var(--dim); font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+.link-act-btn.del:hover { background:rgba(240,80,80,.1); color:#f08080; }
+
+/* ═══ CHECKIN PAGE ═══ */
+#page-tips { background:var(--night); }
+.checkin-page { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+.ci-tabs { display:flex; padding:10px 12px 0; gap:8px; flex-shrink:0; }
+.ci-tab { flex:1; padding:8px 6px; font-size:12px; font-weight:500; border-radius:10px; border:1px solid var(--border); background:var(--night-2); color:var(--dim); cursor:pointer; transition:all .2s; -webkit-user-select:none; user-select:none; }
+.ci-tab.active { background:var(--night-3); color:var(--bright); border-color:var(--border-gold); }
+.ci-progress-wrap { display:flex; align-items:center; gap:10px; padding:10px 12px 6px; flex-shrink:0; }
+.ci-progress-bar { flex:1; height:4px; background:var(--night-3); border-radius:2px; overflow:hidden; }
+.ci-progress-fill { height:100%; background:var(--gold); border-radius:2px; transition:width .3s ease; width:0%; }
+.ci-progress-text { font-size:10px; color:var(--dim); white-space:nowrap; }
+.ci-list { flex:1; min-height:0; overflow-y:auto; padding:4px 12px 8px; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; }
+.ci-item { display:flex; align-items:center; gap:10px; padding:11px 12px; background:var(--night-2); border:1px solid var(--border); border-radius:12px; margin-bottom:7px; -webkit-user-select:none; user-select:none; }
+.ci-item.visited { opacity:.5; }
+.ci-item.visited .ci-check { background:var(--gold); border-color:var(--gold); color:var(--night); }
+.ci-item.visited .ci-name { text-decoration:line-through; }
+.ci-check { width:20px; height:20px; border-radius:50%; border:2px solid rgba(255,255,255,.25); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; transition:all .15s; background:transparent; }
+.ci-emoji { font-size:22px; flex-shrink:0; line-height:1; }
+.ci-info { flex:1; min-width:0; }
+.ci-name { font-size:13px; font-weight:500; color:var(--bright); margin-bottom:2px; }
+.ci-desc { font-size:10px; color:var(--dim); line-height:1.4; }
+.ci-map-btn { flex-shrink:0; width:30px; height:30px; border-radius:7px; background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--mid); display:flex; align-items:center; justify-content:center; font-size:13px; cursor:pointer; transition:all .15s; -webkit-user-select:none; user-select:none; }
+.ci-add-btn-wrap { padding:6px 12px 16px; flex-shrink:0; }
+
+/* ═══ MODALS ═══ */
+.link-modal { position:fixed; inset:0; z-index:9100; display:none; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.55); }
+.link-modal.open { display:flex; }
+.link-modal-sheet { background:#0d1530; border-radius:20px 20px 0 0; width:100%; padding:0 0 calc(16px + env(safe-area-inset-bottom,0px)); border-top:1px solid rgba(255,255,255,.1); transform:translateY(100%); transition:transform .28s cubic-bezier(.32,1,.32,1); }
+.link-modal.open .link-modal-sheet { transform:translateY(0); }
+.link-modal-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 12px; border-bottom:1px solid var(--border); }
+.link-modal-title { font-size:14px; font-weight:500; color:var(--bright); }
+.link-modal-close { background:rgba(255,255,255,.08); border:none; color:var(--mid); font-size:18px; width:28px; height:28px; border-radius:50%; cursor:pointer; }
+.link-modal-body { padding:14px 18px 0; display:flex; flex-direction:column; gap:8px; }
+.link-modal-input { background:var(--night-3); border:1px solid var(--border); border-radius:8px; color:var(--bright); padding:10px 12px; width:100%; outline:none; box-sizing:border-box; }
+.link-modal-input:focus { border-color:var(--border-gold); }
+.link-modal-save { margin-top:4px; padding:12px; background:var(--gold); color:var(--night); border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; letter-spacing:.04em; }
+
+/* Station modal */
+#stn-modal { position:fixed; inset:0; z-index:9000; display:none; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.5); }
+#stn-sheet { background:#0d1530; border-radius:20px 20px 0 0; width:100%; padding:0 0 calc(32px + env(safe-area-inset-bottom,0px)); border-top:1px solid rgba(255,255,255,.1); transform:translateY(100%); transition:transform .28s cubic-bezier(.32,1,.32,1); max-height:80vh; overflow-y:auto; }
+#stn-sheet-content { padding:18px 20px 0; }
+
+/* MTR picker */
+#mtr-picker { position:fixed; inset:0; z-index:9100; display:none; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.55); }
+
+/* Hotel modal */
+#hotel-modal .link-modal-sheet, #ci-modal .link-modal-sheet { max-height:85vh; overflow-y:auto; }
+</style>
+
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ PAGES ═══ -->
+  <div id="pages">
+
+    <!-- PAGE: HOME -->
+    <div class="page active" id="page-home">
+      <!-- Hero cover -->
+      <div class="home-hero">
+  <!-- ═══ NIGHT SCENE SVG ═══ -->
+  <svg class="hero-scene" viewBox="0 0 1440 820" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="nightSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#060a18"/>
+        <stop offset="40%"  stop-color="#0d1530"/>
+        <stop offset="75%"  stop-color="#1a2548"/>
+        <stop offset="100%" stop-color="#0e1828"/>
+      </linearGradient>
+      <linearGradient id="harbourG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#0d2240"/>
+        <stop offset="50%"  stop-color="#081828"/>
+        <stop offset="100%" stop-color="#050e1a"/>
+      </linearGradient>
+      <radialGradient id="hkGlow" cx="30%" cy="80%" r="50%">
+        <stop offset="0%"   stop-color="#f5a020" stop-opacity="0.2"/>
+        <stop offset="100%" stop-color="#f5a020" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="macGlow" cx="75%" cy="70%" r="45%">
+        <stop offset="0%"   stop-color="#60e090" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="#60e090" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="stPaulFade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="white" stop-opacity="1"/>
+        <stop offset="55%"  stop-color="white" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="white" stop-opacity="0"/>
+      </linearGradient>
+      <mask id="stPaulMask">
+        <rect width="1440" height="820" fill="url(#stPaulFade)"/>
+      </mask>
+    </defs>
+
+    <!-- Night sky -->
+    <rect width="1440" height="820" fill="url(#nightSky)"/>
+    <rect width="1440" height="820" fill="url(#hkGlow)"/>
+    <rect width="1440" height="820" fill="url(#macGlow)"/>
+
+    <!-- Stars -->
+    <g opacity="0.75">
+      <circle cx="80"  cy="55"  r="1.2" fill="white"/>
+      <circle cx="152" cy="38"  r="0.9" fill="white"/>
+      <circle cx="230" cy="72"  r="1.4" fill="white" style="animation:starTwinkle 3s infinite"/>
+      <circle cx="310" cy="44"  r="1.0" fill="white"/>
+      <circle cx="410" cy="28"  r="1.3" fill="white" style="animation:starTwinkle 2.4s infinite 0.6s"/>
+      <circle cx="520" cy="60"  r="0.8" fill="white"/>
+      <circle cx="590" cy="35"  r="1.1" fill="white"/>
+      <circle cx="640" cy="18"  r="1.5" fill="#ffe8aa" style="animation:starTwinkle 2s infinite 1s"/>
+      <circle cx="720" cy="48"  r="0.9" fill="white"/>
+      <circle cx="800" cy="22"  r="1.2" fill="white"/>
+      <circle cx="870" cy="55"  r="1.0" fill="white" style="animation:starTwinkle 3.5s infinite 0.3s"/>
+      <circle cx="960" cy="32"  r="1.4" fill="white"/>
+      <circle cx="1050" cy="60" r="0.8" fill="white"/>
+      <circle cx="1130" cy="42" r="1.1" fill="white" style="animation:starTwinkle 2.8s infinite 1.2s"/>
+      <circle cx="1200" cy="25" r="1.3" fill="white"/>
+      <circle cx="1290" cy="58" r="1.0" fill="white"/>
+      <circle cx="1370" cy="38" r="1.5" fill="#ffe8aa" style="animation:starTwinkle 2.2s infinite 0.8s"/>
+      <circle cx="180" cy="110" r="0.9" fill="white"/>
+      <circle cx="450" cy="95"  r="1.1" fill="white"/>
+      <circle cx="700" cy="88"  r="0.8" fill="white"/>
+      <circle cx="990" cy="100" r="1.0" fill="white"/>
+      <circle cx="1260" cy="92" r="1.2" fill="white"/>
+    </g>
+
+    <!-- Harbour water -->
+    <path d="M0,618 Q360,600 720,608 Q1080,616 1440,602 L1440,820 L0,820 Z" fill="url(#harbourG)"/>
+
+    <!-- Water reflections -->
+    <g opacity="0.3">
+      <rect x="296" y="622" width="4"  height="80"  rx="2" fill="#ffe066" style="animation:shimmerPulse 3s infinite"/>
+      <rect x="430" y="626" width="3"  height="65"  rx="1" fill="#ffa040" style="animation:shimmerPulse 2.5s infinite 0.4s"/>
+      <rect x="520" y="630" width="4"  height="55"  rx="2" fill="#ff8060" style="animation:shimmerPulse 3.5s infinite 0.8s"/>
+      <rect x="610" y="628" width="3"  height="60"  rx="1" fill="#ffe066"/>
+      <rect x="660" y="632" width="2"  height="48"  rx="1" fill="#a0c8ff" style="animation:shimmerPulse 4s infinite 1s"/>
+      <rect x="350" y="642" width="2"  height="36"  rx="1" fill="#ffcc44" opacity="0.7"/>
+      <rect x="480" y="647" width="2"  height="30"  rx="1" fill="#ffaa33" opacity="0.6"/>
+    </g>
+
+    <!-- Wave line on water -->
+    <path d="M0,626 Q180,618 360,626 Q540,634 720,626 Q900,618 1080,626 Q1260,634 1440,626" fill="none" stroke="white" stroke-width="1" opacity="0.05"/>
+
+    <!-- City glow above skyline -->
+    <ellipse cx="400" cy="520" rx="340" ry="110" fill="#f5a020" opacity="0.06"/>
+
+    <!-- HK Night Skyline -->
+    <g style="animation: lmFloat 12s ease-in-out infinite -2s;">
+      <!-- Background haze buildings -->
+      <rect x="60"  y="480" width="26"  height="138" rx="1" fill="#1e2e50" opacity="0.7"/>
+      <rect x="92"  y="455" width="20"  height="163" rx="1" fill="#1e2e50" opacity="0.7"/>
+      <rect x="118" y="468" width="30"  height="150" rx="1" fill="#1e2e50" opacity="0.65"/>
+      <rect x="156" y="442" width="18"  height="176" rx="1" fill="#1e2e50" opacity="0.65"/>
+      <rect x="182" y="460" width="26"  height="158" rx="1" fill="#1e2e50" opacity="0.6"/>
+      <rect x="216" y="432" width="16"  height="186" rx="1" fill="#1e2e50" opacity="0.6"/>
+
+      <!-- IFC (tallest, lit) -->
+      <rect x="252" y="308" width="44"  height="310" rx="2" fill="#1c2e50"/>
+      <rect x="258" y="318" width="8" height="10" rx="1" fill="#ffe8a0" opacity="0.8"/>
+      <rect x="270" y="318" width="8" height="10" rx="1" fill="#ffe8a0" opacity="0.65"/>
+      <rect x="282" y="318" width="8" height="10" rx="1" fill="#ffcc60" opacity="0.5"/>
+      <rect x="258" y="334" width="8" height="10" rx="1" fill="#ffe8a0" opacity="0.75"/>
+      <rect x="270" y="334" width="8" height="10" rx="1" fill="#ffe8a0" opacity="0.55"/>
+      <rect x="282" y="334" width="8" height="10" rx="1" fill="#ffe8a0" opacity="0.8"/>
+      <rect x="258" y="350" width="8" height="10" rx="1" fill="#ffcc60" opacity="0.6"/>
+      <rect x="270" y="350" width="8" height="10" rx="1" fill="#ffe8a0" opacity="0.7"/>
+      <rect x="258" y="366" width="8" height="10" rx="1" fill="#ffe8a0" opacity="0.8"/>
+      <rect x="282" y="366" width="8" height="10" rx="1" fill="#ffe8a0" opacity="0.65"/>
+      <rect x="258" y="382" width="8" height="10" rx="1" fill="#ffcc60" opacity="0.5"/>
+      <rect x="270" y="382" width="8" height="10" rx="1" fill="#ffe8a0" opacity="0.75"/>
+      <rect x="282" y="382" width="8" height="10" rx="1" fill="#ffe8a0" opacity="0.7"/>
+      <line x1="274" y1="308" x2="274" y2="282" stroke="#3a5070" stroke-width="1.5"/>
+
+      <!-- Bank of China -->
+      <polygon points="302,618 328,382 354,618" fill="#162240"/>
+      <line x1="328" y1="382" x2="328" y2="618" stroke="#223055" stroke-width="1" opacity="0.8"/>
+      <line x1="302" y1="500" x2="354" y2="500" stroke="#223055" stroke-width="0.8" opacity="0.5"/>
+      <line x1="308" y1="442" x2="348" y2="442" stroke="#223055" stroke-width="0.8" opacity="0.4"/>
+      <rect x="318" y="396" width="5" height="7" rx="1" fill="#a0c8ff" opacity="0.55"/>
+      <rect x="326" y="414" width="5" height="7" rx="1" fill="#ffe8a0" opacity="0.5"/>
+      <rect x="320" y="430" width="5" height="7" rx="1" fill="#a0c8ff" opacity="0.45"/>
+
+      <!-- Cheung Kong Centre style (wide) -->
+      <rect x="362" y="358" width="58"  height="260" rx="2" fill="#1a2e50"/>
+      <rect x="368" y="366" width="9"  height="11" rx="1" fill="#ffe8a0" opacity="0.75"/>
+      <rect x="381" y="366" width="9"  height="11" rx="1" fill="#ffcc60" opacity="0.6"/>
+      <rect x="394" y="366" width="9"  height="11" rx="1" fill="#ffe8a0" opacity="0.8"/>
+      <rect x="407" y="366" width="9"  height="11" rx="1" fill="#ffe8a0" opacity="0.5"/>
+      <rect x="368" y="383" width="9"  height="11" rx="1" fill="#ffe8a0" opacity="0.6"/>
+      <rect x="394" y="383" width="9"  height="11" rx="1" fill="#ffcc60" opacity="0.7"/>
+      <rect x="407" y="383" width="9"  height="11" rx="1" fill="#ffe8a0" opacity="0.65"/>
+      <rect x="368" y="400" width="9"  height="11" rx="1" fill="#ffe8a0" opacity="0.8"/>
+      <rect x="381" y="400" width="9"  height="11" rx="1" fill="#ffe8a0" opacity="0.55"/>
+      <rect x="407" y="400" width="9"  height="11" rx="1" fill="#ffe8a0" opacity="0.7"/>
+      <rect x="362" y="356" width="58" height="6"  rx="1" fill="#2a90ff" opacity="0.45"/>
+
+      <!-- Slim tower -->
+      <rect x="428" y="338" width="28"  height="280" rx="2" fill="#162038"/>
+      <rect x="432" y="346" width="6"  height="9" rx="1" fill="#ffe8a0" opacity="0.7"/>
+      <rect x="443" y="346" width="6"  height="9" rx="1" fill="#ffe8a0" opacity="0.5"/>
+      <rect x="432" y="361" width="6"  height="9" rx="1" fill="#ffcc60" opacity="0.8"/>
+      <rect x="443" y="361" width="6"  height="9" rx="1" fill="#ffe8a0" opacity="0.65"/>
+      <rect x="432" y="376" width="6"  height="9" rx="1" fill="#ffe8a0" opacity="0.6"/>
+      <rect x="443" y="376" width="6"  height="9" rx="1" fill="#ffe8a0" opacity="0.75"/>
+      <line x1="442" y1="338" x2="442" y2="315" stroke="#3a5070" stroke-width="1.2"/>
+
+      <!-- Wide mid tower -->
+      <rect x="464" y="368" width="50"  height="250" rx="2" fill="#1c2e50"/>
+      <rect x="469" y="376" width="8"  height="10" rx="1" fill="#ffe8a0" opacity="0.75"/>
+      <rect x="482" y="376" width="8"  height="10" rx="1" fill="#ffe8a0" opacity="0.55"/>
+      <rect x="495" y="376" width="8"  height="10" rx="1" fill="#ffcc60" opacity="0.7"/>
+      <rect x="469" y="392" width="8"  height="10" rx="1" fill="#ffcc60" opacity="0.6"/>
+      <rect x="495" y="392" width="8"  height="10" rx="1" fill="#ffe8a0" opacity="0.8"/>
+      <rect x="469" y="408" width="8"  height="10" rx="1" fill="#ffe8a0" opacity="0.7"/>
+      <rect x="482" y="408" width="8"  height="10" rx="1" fill="#ffe8a0" opacity="0.65"/>
+      <rect x="464" y="366" width="50" height="5"  rx="1" fill="#ff6090" opacity="0.55"/>
+
+      <!-- Shorter right group -->
+      <rect x="522" y="418" width="36"  height="200" rx="1" fill="#162038"/>
+      <rect x="527" y="426" width="7"  height="9" rx="1" fill="#ffe8a0" opacity="0.65"/>
+      <rect x="539" y="426" width="7"  height="9" rx="1" fill="#ffe8a0" opacity="0.7"/>
+      <rect x="527" y="441" width="7"  height="9" rx="1" fill="#ffcc60" opacity="0.55"/>
+      <rect x="564" y="398" width="44"  height="220" rx="2" fill="#1a2848"/>
+      <rect x="569" y="406" width="8"  height="10" rx="1" fill="#ffe8a0" opacity="0.8"/>
+      <rect x="582" y="406" width="8"  height="10" rx="1" fill="#ffcc60" opacity="0.6"/>
+      <rect x="569" y="422" width="8"  height="10" rx="1" fill="#ffe8a0" opacity="0.7"/>
+      <rect x="595" y="422" width="8"  height="10" rx="1" fill="#ffe8a0" opacity="0.55"/>
+      <rect x="564" y="396" width="44" height="5"  rx="1" fill="#60a8ff" opacity="0.45"/>
+
+      <!-- Fading right buildings -->
+      <rect x="614" y="432" width="32"  height="186" rx="1" fill="#162038" opacity="0.9"/>
+      <rect x="618" y="440" width="6"  height="8" rx="1" fill="#ffe8a0" opacity="0.55"/>
+      <rect x="628" y="440" width="6"  height="8" rx="1" fill="#ffe8a0" opacity="0.45"/>
+      <rect x="652" y="442" width="38"  height="176" rx="1" fill="#1a2848" opacity="0.8"/>
+      <rect x="656" y="450" width="7"  height="9" rx="1" fill="#ffcc60" opacity="0.5"/>
+      <rect x="668" y="450" width="7"  height="9" rx="1" fill="#ffe8a0" opacity="0.55"/>
+      <rect x="696" y="452" width="30"  height="166" rx="1" fill="#162038" opacity="0.7"/>
+      <rect x="730" y="466" width="28"  height="152" rx="1" fill="#1a2848" opacity="0.6"/>
+      <rect x="762" y="476" width="24"  height="142" rx="1" fill="#162038" opacity="0.5"/>
+    </g>
+
+    <!-- ══ ST PAUL RUINS — ghostly white overlay, right side ══ -->
+    <g opacity="0.11" mask="url(#stPaulMask)">
+      <!-- Steps -->
+      <rect x="880" y="682" width="400" height="10" rx="2" fill="white"/>
+      <rect x="900" y="669" width="360" height="13" rx="2" fill="white"/>
+      <rect x="920" y="655" width="320" height="14" rx="2" fill="white"/>
+      <rect x="940" y="640" width="280" height="15" rx="2" fill="white"/>
+      <!-- Facade body -->
+      <rect x="938" y="308" width="284" height="342" rx="4" fill="white"/>
+      <!-- Hollow cutout -->
+      <rect x="958" y="328" width="244" height="298" rx="2" fill="#060a18"/>
+      <!-- Tier 1 — large arches (bottom) -->
+      <rect x="970"  y="588" width="42" height="56" rx="21" fill="white"/>
+      <rect x="1022" y="588" width="42" height="56" rx="21" fill="white"/>
+      <rect x="1074" y="588" width="42" height="56" rx="21" fill="white"/>
+      <rect x="1126" y="588" width="42" height="56" rx="21" fill="white"/>
+      <rect x="1172" y="598" width="20" height="46" rx="10" fill="white"/>
+      <!-- Tier 2 -->
+      <rect x="978"  y="520" width="38" height="52" rx="19" fill="white"/>
+      <rect x="1028" y="520" width="38" height="52" rx="19" fill="white"/>
+      <rect x="1078" y="520" width="38" height="52" rx="19" fill="white"/>
+      <rect x="1128" y="520" width="38" height="52" rx="19" fill="white"/>
+      <rect x="1170" y="530" width="20" height="42" rx="10" fill="white"/>
+      <!-- Tier 3 -->
+      <rect x="990"  y="460" width="32" height="46" rx="16" fill="white"/>
+      <rect x="1036" y="460" width="32" height="46" rx="16" fill="white"/>
+      <rect x="1082" y="460" width="32" height="46" rx="16" fill="white"/>
+      <rect x="1128" y="460" width="32" height="46" rx="16" fill="white"/>
+      <!-- Tier 4 -->
+      <rect x="1008" y="408" width="24" height="40" rx="12" fill="white"/>
+      <rect x="1048" y="408" width="24" height="40" rx="12" fill="white"/>
+      <rect x="1088" y="408" width="24" height="40" rx="12" fill="white"/>
+      <rect x="1128" y="408" width="24" height="40" rx="12" fill="white"/>
+      <!-- Gable -->
+      <polygon points="938,310 1080,215 1222,310" fill="white"/>
+      <polygon points="960,308 1080,232 1200,308" fill="#060a18"/>
+      <!-- Rose window -->
+      <circle cx="1080" cy="272" r="30" fill="white"/>
+      <circle cx="1080" cy="272" r="22" fill="#060a18"/>
+      <circle cx="1080" cy="272" r="9"  fill="white"/>
+      <line x1="1080" y1="250" x2="1080" y2="294" stroke="white" stroke-width="2.5"/>
+      <line x1="1058" y1="272" x2="1102" y2="272" stroke="white" stroke-width="2.5"/>
+      <line x1="1064" y1="256" x2="1096" y2="288" stroke="white" stroke-width="1.8"/>
+      <line x1="1096" y1="256" x2="1064" y2="288" stroke="white" stroke-width="1.8"/>
+      <!-- Cross -->
+      <line x1="1080" y1="215" x2="1080" y2="160" stroke="white" stroke-width="6" stroke-linecap="round"/>
+      <line x1="1056" y1="186" x2="1104" y2="186" stroke="white" stroke-width="6" stroke-linecap="round"/>
+      <!-- Side pillars -->
+      <rect x="938"  y="310" width="20" height="342" rx="2" fill="white"/>
+      <rect x="1202" y="310" width="20" height="342" rx="2" fill="white"/>
+    </g>
+
+    <!-- Macau soft green glow -->
+    <ellipse cx="1080" cy="480" rx="280" ry="220" fill="#30c870" opacity="0.04"/>
+    <ellipse cx="1080" cy="640" rx="220" ry="100" fill="#60e090" opacity="0.04"/>
+
+    <!-- Star Ferry sailing across harbour (left to right, loops) -->
+    <g style="animation: ferrySail 18s linear infinite;">
+      <!-- Wake trail behind boat -->
+      <path d="M-80,667 Q-40,662 0,667" fill="none" stroke="white" stroke-width="1.2" opacity="0.15"/>
+      <path d="M-90,672 Q-45,666 0,672" fill="none" stroke="white" stroke-width="0.8" opacity="0.1"/>
+      <!-- Hull -->
+      <path d="M0,654 Q66,643 132,654 L126,670 Q66,678 6,670 Z" fill="#0d2240"/>
+      <path d="M6,654 Q66,644 126,654" fill="none" stroke="#1a4060" stroke-width="1.5" opacity="0.8"/>
+      <!-- Upper deck -->
+      <rect x="12" y="635" width="108" height="22" rx="3" fill="#112038"/>
+      <!-- Windows lit warm -->
+      <rect x="19"  y="638" width="12" height="13" rx="2" fill="#ffe8a0" opacity="0.85"/>
+      <rect x="36"  y="638" width="12" height="13" rx="2" fill="#ffe8a0" opacity="0.75"/>
+      <rect x="53"  y="638" width="12" height="13" rx="2" fill="#ffcc60" opacity="0.8"/>
+      <rect x="70"  y="638" width="12" height="13" rx="2" fill="#ffe8a0" opacity="0.7"/>
+      <rect x="87"  y="638" width="12" height="13" rx="2" fill="#ffe8a0" opacity="0.85"/>
+      <rect x="104" y="638" width="12" height="13" rx="2" fill="#ffcc60" opacity="0.65"/>
+      <!-- Funnel (no red) -->
+      <rect x="55" y="622" width="14" height="15" rx="2" fill="#1e3050"/>
+      <rect x="58" y="618" width="8"  height="6"  rx="1" fill="#152030"/>
+      <!-- Name on hull -->
+      <text x="66" y="665" font-family="sans-serif" font-size="8" fill="#a0c0e0" opacity="0.65" text-anchor="middle">★ 天星小輪</text>
+      <!-- Water reflections under boat -->
+      <rect x="19"  y="672" width="12" height="10" rx="1" fill="#ffe8a0" opacity="0.1"/>
+      <rect x="70"  y="674" width="12" height="8"  rx="1" fill="#ffcc60" opacity="0.08"/>
+    </g>
+
+    <!-- Harbour gloss line -->
+    <path d="M0,616 Q360,606 720,612 Q1080,618 1440,608" fill="none" stroke="white" stroke-width="0.8" opacity="0.05"/>
+
+  </svg>
+  <!-- ═══ END NIGHT SCENE SVG ═══ -->
+        <div class="home-hero-content">
+          <p class="home-eyebrow">✈ Hong Kong · Macau</p>
+          <h1 class="home-title">
+            <span class="hk">香港</span><span class="sep">·</span><span class="mac">澳門</span>
+          </h1>
+          <div class="home-date">📅 2026 &nbsp;·&nbsp; 09 / 16 — 09 / 19</div>
+          <div class="hero-countdown" id="hero-countdown">
+            <div class="hcd-unit"><span class="hcd-num" id="cd-days">--</span><span class="hcd-label">天</span></div>
+            <div class="hcd-sep">:</div>
+            <div class="hcd-unit"><span class="hcd-num" id="cd-hours">--</span><span class="hcd-label">時</span></div>
+            <div class="hcd-sep">:</div>
+            <div class="hcd-unit"><span class="hcd-num" id="cd-mins">--</span><span class="hcd-label">分</span></div>
+            <div class="hcd-sep">:</div>
+            <div class="hcd-unit"><span class="hcd-num" id="cd-secs">--</span><span class="hcd-label">秒</span></div>
+          </div>
+          <div class="hcd-label-main" id="cd-label">距離出發</div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="home-body">
+        <div class="container">
+
+          <!-- 即時天氣 -->
+          <div class="home-block" id="weather-block">
+            <div class="home-block-header">
+              <span class="hb-label">🌤 即時天氣</span>
+              <span class="weather-updated" id="weather-updated"></span>
+            </div>
+            <div class="weather-grid">
+              <!-- 香港 -->
+              <div class="weather-city" id="wx-hk">
+                <div class="wx-loading">載入中⋯</div>
+              </div>
+              <!-- 澳門 -->
+              <div class="weather-city" id="wx-mac">
+                <div class="wx-loading">載入中⋯</div>
+              </div>
+            </div>
+          </div>
+          <div class="home-block">
+            <div class="home-block-header">
+              <span class="hb-label">✈ 航班資訊</span>
+              <button class="hb-more" onclick="goToItineraryInfo()">查看詳情 →</button>
+            </div>
+            <div class="hf-row">
+              <span class="hf-dir">去程</span>
+              <span class="hf-num">BR 891</span>
+              <span class="hf-route">桃園 07:00 → 香港 08:50</span>
+              <span class="hf-date">09/16</span>
+            </div>
+            <div class="hf-row">
+              <span class="hf-dir ret">回程</span>
+              <span class="hf-num">BR 858</span>
+              <span class="hf-route">香港 21:05 → 桃園 22:50</span>
+              <span class="hf-date">09/19</span>
+            </div>
+          </div>
+
+          <!-- 行程摘要 -->
+          <div class="home-block">
+            <div class="home-block-header">
+              <span class="hb-label">📅 行程規劃</span>
+              <button class="hb-more" onclick="showPage('itinerary')">編輯行程 →</button>
+            </div>
+            <div class="hd-card" onclick="goToDay(0)">
+              <div class="hd-num">01</div>
+              <div class="hd-info">
+                <div class="hd-title" id="hd-title-0">09/16 — 抵達香港</div>
+                <div class="hd-sub" id="hd-sub-0">香港 · 第一天</div>
+              </div>
+              <span class="hd-tag tag-hk" id="hd-tag-0">香港</span>
+            </div>
+            <div class="hd-card" onclick="goToDay(1)">
+              <div class="hd-num">02</div>
+              <div class="hd-info">
+                <div class="hd-title" id="hd-title-1">09/17 — 自行填入</div>
+                <div class="hd-sub" id="hd-sub-1">地點 · 主題</div>
+              </div>
+              <span class="hd-tag tag-hk" id="hd-tag-1">香港</span>
+            </div>
+            <div class="hd-card" onclick="goToDay(2)">
+              <div class="hd-num">03</div>
+              <div class="hd-info">
+                <div class="hd-title" id="hd-title-2">09/18 — 自行填入</div>
+                <div class="hd-sub" id="hd-sub-2">地點 · 主題</div>
+              </div>
+              <span class="hd-tag tag-mac" id="hd-tag-2">澳門</span>
+            </div>
+            <div class="hd-card" onclick="goToDay(3)">
+              <div class="hd-num">04</div>
+              <div class="hd-info">
+                <div class="hd-title" id="hd-title-3">09/19 — 回程</div>
+                <div class="hd-sub" id="hd-sub-3">香港 · 最後一天</div>
+              </div>
+              <span class="hd-tag tag-hk" id="hd-tag-3">香港</span>
+            </div>
+          </div>
+
+          <!-- 記帳小組件 -->
+          <div class="home-block" id="home-ledger-block">
+            <div class="home-block-header">
+              <span class="hb-label">📒 旅費記帳</span>
+              <button class="hb-more" onclick="showPage('food');switchTool('ledger',document.querySelector('[onclick*=ledger]'))">查看全部 →</button>
+            </div>
+
+            <!-- 快速新增 -->
+            <div class="home-ldg-quick">
+              <input type="text" id="home-ldg-desc" placeholder="消費項目" class="home-ldg-input"/>
+              <input type="number" id="home-ldg-amt" placeholder="金額" class="home-ldg-input" style="width:72px"/>
+              <select id="home-ldg-cur" class="home-ldg-input" style="width:62px">
+                <option value="HKD">HKD</option>
+                <option value="MOP">MOP</option>
+                <option value="TWD">TWD</option>
+              </select>
+              <button onclick="homeAddLedger()" class="home-ldg-btn">＋</button>
+            </div>
+            <div class="home-ldg-quick" style="margin-top:-6px">
+              <select id="home-ldg-cat" class="home-ldg-input">
+                <option value="食物">🍜 食物</option>
+                <option value="購物">🛍 購物</option>
+                <option value="交通">🚇 交通</option>
+                <option value="住宿">🏨 住宿</option>
+                <option value="景點">🎡 景點</option>
+                <option value="其他">📦 其他</option>
+              </select>
+              <select id="home-ldg-who" class="home-ldg-input">
+                <option value="共同">👫 共同</option>
+                <option value="魚千千">🌸 魚千千</option>
+                <option value="莊47">🐻 莊47</option>
+              </select>
+              <select id="home-ldg-day" class="home-ldg-input">
+                <option value="Day 1">Day 1</option>
+                <option value="Day 2">Day 2</option>
+                <option value="Day 3">Day 3</option>
+                <option value="Day 4">Day 4</option>
+              </select>
+            </div>
+
+            <!-- 最近 3 筆 -->
+            <div id="home-ledger-preview"></div>
+
+            <!-- 總花費小計 -->
+            <div id="home-ledger-summary" style="display:none"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <div class="page" id="page-flights">
+      <div class="mtr-page">
+
+        <!-- Mini hero -->
+<div class="page-hero"><svg viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="mhsf" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#060a18"/><stop offset="100%" stop-color="#1a2548"/></linearGradient></defs><rect width="800" height="140" fill="url(#mhsf)"/><rect x="0" y="80" width="800" height="60" fill="#081828"/><rect x="20" y="35" width="18" height="85" rx="1" fill="#162240"/><rect x="45" y="22" width="24" height="98" rx="1" fill="#1a2e50"/><rect x="77" y="42" width="16" height="78" rx="1" fill="#162038"/><rect x="100" y="14" width="30" height="106" rx="1" fill="#1a2e50"/><rect x="138" y="38" width="20" height="82" rx="1" fill="#162240"/><rect x="166" y="8" width="14" height="112" rx="1" fill="#223055"/><rect x="188" y="48" width="26" height="72" rx="1" fill="#162038"/><rect x="222" y="28" width="18" height="92" rx="1" fill="#1a2e50"/><rect x="248" y="52" width="32" height="68" rx="1" fill="#162240"/><g opacity="0.55"><rect x="25" y="42" width="4" height="5" rx="1" fill="#ffe8a0"/><rect x="106" y="20" width="4" height="5" rx="1" fill="#ffe8a0"/><rect x="227" y="35" width="4" height="5" rx="1" fill="#ffe8a0"/></g><g opacity="0.45"><circle cx="150" cy="10" r="0.9" fill="white"/><circle cx="390" cy="8" r="1.1" fill="#ffe8aa"/><circle cx="600" cy="10" r="1" fill="white"/></g></svg><div class="page-hero-overlay"><div class="page-hero-label">Getting Around</div><div class="page-hero-title">香港交通</div></div></div>
+
+        <!-- Category selector -->
+        <div class="transport-cats">
+          <button class="tcat active" id="tcat-mtr" onclick="switchTransport('mtr',this)">
+            <span class="tcat-icon">🚇</span>
+            <span class="tcat-label">港鐵</span>
+          </button>
+          <button class="tcat" id="tcat-ferry" onclick="switchTransport('ferry',this)">
+            <span class="tcat-icon">⛴</span>
+            <span class="tcat-label">天星小輪</span>
+          </button>
+          <button class="tcat" id="tcat-tram" onclick="switchTransport('tram',this)">
+            <span class="tcat-icon">🚢</span>
+            <span class="tcat-label">港澳快艇</span>
+          </button>
+        </div>
+
+        <!-- ── MTR panel ── -->
+        <div class="transport-panel active" id="tp-mtr">
+          <div class="mtr-line-strip" id="mtr-tabs"></div>
+          <div class="mtr-hero" id="mtr-hero">
+            <div class="mtr-hero-left">
+              <div class="mtr-hero-code" id="mtr-code">TWL</div>
+              <div>
+                <div class="mtr-hero-name" id="mtr-lname">荃灣線</div>
+                <div class="mtr-hero-count" id="mtr-hint2"></div>
+              </div>
+            </div>
+            <div class="mtr-hero-right">
+              <div class="mtr-term" id="mtr-term-a"></div>
+              <div class="mtr-arrow">↔</div>
+              <div class="mtr-term" id="mtr-term-b"></div>
+            </div>
+          </div>
+          <div class="mtr-stns-wrap"><div id="mtr-stns"></div></div>
+        </div>
+
+        <!-- ── Star Ferry panel ── -->
+        <div class="transport-panel" id="tp-ferry">
+          <div class="tp-scroll">
+            <div class="tp-section-title">⛴ 天星小輪</div>
+            <p class="tp-desc">連接香港島與九龍，百年歷史的維港渡輪，票價超便宜，夜景一流。</p>
+
+            <!-- 路線切換 -->
+            <div class="ferry-route-tabs">
+              <button class="ferry-rtab active" onclick="switchFerryRoute('cen',this)">中環 ↔ 尖沙咀</button>
+              <button class="ferry-rtab" onclick="switchFerryRoute('wan',this)">灣仔 ↔ 尖沙咀</button>
+            </div>
+
+            <!-- 中環↔尖沙咀 -->
+            <div class="ferry-route-panel active" id="fr-cen">
+
+              <!-- 碼頭資訊 -->
+              <div class="tp-info-card" style="margin-bottom:16px">
+                <div class="tp-info-row"><span class="tp-info-label">中環碼頭</span><span class="tp-info-val">中環 7 號碼頭（近中環站 A 出口）</span></div>
+                <div class="tp-info-row"><span class="tp-info-label">尖沙咀碼頭</span><span class="tp-info-val">尖沙咀天星碼頭（近星光大道）</span></div>
+                <div class="tp-info-row"><span class="tp-info-label">航程</span><span class="tp-info-val">約 8–10 分鐘</span></div>
+              </div>
+
+              <!-- 時間表 -->
+              <div class="ferry-timetable">
+                <div class="ferry-tt-col">
+                  <div class="ferry-tt-dir">由中環開出</div>
+                  <div class="ferry-tt-head"><span>服務時間</span><span>班距(分)</span></div>
+                  <div class="ferry-tt-sub">星期一至五（公眾假期除外）</div>
+                  <div class="ferry-tt-row"><span>06:30–07:25</span><span>10 / 12</span></div>
+                  <div class="ferry-tt-row"><span>07:25–09:55</span><span>6</span></div>
+                  <div class="ferry-tt-row"><span>09:55–20:40</span><span>6 / 8</span></div>
+                  <div class="ferry-tt-row"><span>20:40–23:30</span><span>10 / 12</span></div>
+                  <div class="ferry-tt-sub">星期六、日及公眾假期</div>
+                  <div class="ferry-tt-row"><span>06:30–07:25</span><span>10 / 12</span></div>
+                  <div class="ferry-tt-row"><span>07:25–22:40</span><span>6 / 8</span></div>
+                  <div class="ferry-tt-row"><span>22:40–23:30</span><span>10 / 12</span></div>
+                </div>
+                <div class="ferry-tt-col">
+                  <div class="ferry-tt-dir">由尖沙咀開出</div>
+                  <div class="ferry-tt-head"><span>服務時間</span><span>班距(分)</span></div>
+                  <div class="ferry-tt-sub">星期一至五（公眾假期除外）</div>
+                  <div class="ferry-tt-row"><span>06:30–07:15</span><span>10 / 12</span></div>
+                  <div class="ferry-tt-row"><span>07:15–09:45</span><span>6</span></div>
+                  <div class="ferry-tt-row"><span>09:45–20:30</span><span>6 / 8</span></div>
+                  <div class="ferry-tt-row"><span>20:30–23:30</span><span>10 / 12</span></div>
+                  <div class="ferry-tt-sub">星期六、日及公眾假期</div>
+                  <div class="ferry-tt-row"><span>06:30–07:15</span><span>10 / 12</span></div>
+                  <div class="ferry-tt-row"><span>07:15–22:30</span><span>6 / 8</span></div>
+                  <div class="ferry-tt-row"><span>22:30–23:30</span><span>10 / 12</span></div>
+                </div>
+              </div>
+
+              <!-- 收費表 -->
+              <div class="ferry-fare-title">收費表</div>
+              <div class="ferry-fare-table">
+                <div class="ffe-head">
+                  <div class="ffe-cell label"></div>
+                  <div class="ffe-group">
+                    <div class="ffe-group-label">平日</div>
+                    <div class="ffe-sub-row"><span>上層</span><span>下層</span></div>
+                  </div>
+                  <div class="ffe-group">
+                    <div class="ffe-group-label">週末/假日</div>
+                    <div class="ffe-sub-row"><span>上層</span><span>下層</span></div>
+                  </div>
+                </div>
+                <div class="ffe-row highlight"><div class="ffe-cell label">成人</div><span>$5.0</span><span>$4.0</span><span>$6.5</span><span>$5.6</span></div>
+                <div class="ffe-row"><div class="ffe-cell label">小童 3–12歲</div><span>$2.9</span><span>$2.8</span><span>$3.9</span><span>$3.7</span></div>
+                <div class="ffe-row"><div class="ffe-cell label">長者 65+</div><span>$2.9</span><span>$2.8</span><span>$3.9</span><span>$3.7</span></div>
+                <div class="ffe-row special"><div class="ffe-cell label">四日旅遊票</div><div class="ffe-cell full">$50.0（無限次）</div></div>
+              </div>
+            </div>
+
+            <!-- 灣仔↔尖沙咀 -->
+            <div class="ferry-route-panel" id="fr-wan">
+              <div class="tp-info-card" style="margin-bottom:16px">
+                <div class="tp-info-row"><span class="tp-info-label">灣仔碼頭</span><span class="tp-info-val">灣仔碼頭（近會展中心）</span></div>
+                <div class="tp-info-row"><span class="tp-info-label">尖沙咀碼頭</span><span class="tp-info-val">尖沙咀天星碼頭</span></div>
+                <div class="tp-info-row"><span class="tp-info-label">航程</span><span class="tp-info-val">約 8–10 分鐘</span></div>
+              </div>
+
+              <div class="ferry-timetable">
+                <div class="ferry-tt-col">
+                  <div class="ferry-tt-dir">由灣仔開出</div>
+                  <div class="ferry-tt-head"><span>服務時間</span><span>班距(分)</span></div>
+                  <div class="ferry-tt-sub">星期一至六（公眾假期除外）</div>
+                  <div class="ferry-tt-row"><span>07:30–07:52</span><span>11</span></div>
+                  <div class="ferry-tt-row"><span>07:52–09:12</span><span>8</span></div>
+                  <div class="ferry-tt-row"><span>09:12–16:48</span><span>12</span></div>
+                  <div class="ferry-tt-row"><span>16:48–18:24</span><span>8</span></div>
+                  <div class="ferry-tt-row"><span>18:24–20:00</span><span>12</span></div>
+                  <div class="ferry-tt-row"><span>20:00–22:20</span><span>10–14</span></div>
+                  <div class="ferry-tt-row"><span>22:20–23:00</span><span>20</span></div>
+                  <div class="ferry-tt-sub">星期日及公眾假期</div>
+                  <div class="ferry-tt-row"><span>07:40–13:00</span><span>20</span></div>
+                  <div class="ferry-tt-row"><span>13:00–19:00</span><span>12</span></div>
+                  <div class="ferry-tt-row"><span>19:00–22:20</span><span>10–14</span></div>
+                  <div class="ferry-tt-row"><span>22:20–23:00</span><span>20</span></div>
+                </div>
+                <div class="ferry-tt-col">
+                  <div class="ferry-tt-dir">由尖沙咀開出</div>
+                  <div class="ferry-tt-head"><span>服務時間</span><span>班距(分)</span></div>
+                  <div class="ferry-tt-sub">星期一至六（公眾假期除外）</div>
+                  <div class="ferry-tt-row"><span>07:20–07:30</span><span>10</span></div>
+                  <div class="ferry-tt-row"><span>07:30–07:41</span><span>11</span></div>
+                  <div class="ferry-tt-row"><span>07:41–09:00</span><span>8</span></div>
+                  <div class="ferry-tt-row"><span>09:00–16:36</span><span>12</span></div>
+                  <div class="ferry-tt-row"><span>16:36–18:12</span><span>8</span></div>
+                  <div class="ferry-tt-row"><span>18:12–19:36</span><span>12</span></div>
+                  <div class="ferry-tt-row"><span>19:36–22:30</span><span>10–14</span></div>
+                  <div class="ferry-tt-row"><span>22:30–22:50</span><span>20</span></div>
+                  <div class="ferry-tt-sub">星期日及公眾假期</div>
+                  <div class="ferry-tt-row"><span>07:30–12:50</span><span>20</span></div>
+                  <div class="ferry-tt-row"><span>12:50–19:00</span><span>12</span></div>
+                  <div class="ferry-tt-row"><span>19:00–22:30</span><span>10–14</span></div>
+                  <div class="ferry-tt-row"><span>22:30–22:50</span><span>20</span></div>
+                </div>
+              </div>
+
+              <div class="ferry-fare-title">收費表</div>
+              <div class="ferry-fare-table">
+                <div class="ffe-head" style="grid-template-columns:90px 1fr 1fr">
+                  <div class="ffe-cell label"></div>
+                  <div class="ffe-group">
+                    <div class="ffe-group-label">平日</div>
+                  </div>
+                  <div class="ffe-group">
+                    <div class="ffe-group-label">週末/假日</div>
+                  </div>
+                </div>
+                <div class="ffe-row wan"><div class="ffe-cell label">成人</div><span>$5.0</span><span>$6.5</span></div>
+                <div class="ffe-row wan"><div class="ffe-cell label">小童 3–12歲</div><span>$2.9</span><span>$3.9</span></div>
+                <div class="ffe-row wan"><div class="ffe-cell label">長者 65+</div><span>$2.9</span><span>$3.9</span></div>
+                <div class="ffe-row wan special"><div class="ffe-cell label">月票</div><div class="ffe-cell full">$190.0</div></div>
+              </div>
+            </div>
+
+            <div class="tp-tip-box">
+              <div class="tp-tip-title">✨ 情侶推薦</div>
+              <div class="tp-tip-text">傍晚 18:00–20:00 搭渡輪，感受海風同時欣賞維港夜景漸漸亮起，比任何觀景台都更浪漫。建議坐上層甲板！</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Tram panel ── -->
+        <!-- ── 港澳快艇 panel ── -->
+        <div class="transport-panel" id="tp-tram">
+          <div class="tp-scroll">
+            <div class="tp-section-title">🚢 港澳噴射船 TurboJET</div>
+            <p class="tp-desc">香港上環 ↔ 澳門，航程約 55–75 分鐘。建議提前網上購票，旺季尤其要早訂。</p>
+
+            <div class="tp-info-card" style="margin-bottom:16px">
+              <div class="tp-info-row"><span class="tp-info-label">票價</span><span class="tp-info-val">約 HKD 175–280（按時段浮動）</span></div>
+              <div class="tp-info-row"><span class="tp-info-label">購票</span><span class="tp-info-val">TurboJET 官網 / 各大旅遊平台</span></div>
+              <div class="tp-info-row"><span class="tp-info-label">航程</span><span class="tp-info-val">約 55–75 分鐘</span></div>
+            </div>
+
+            <!-- 艙等切換 -->
+            <div class="ferry-route-tabs" style="margin-bottom:16px">
+              <button class="ferry-rtab active" onclick="switchJetfoil('std',this)">普通客位</button>
+              <button class="ferry-rtab" onclick="switchJetfoil('vip',this)">至尊轎車</button>
+            </div>
+
+            <!-- 普通客位 -->
+            <div class="ferry-route-panel active" id="jf-std">
+              <div class="jet-tt-wrap">
+                <div class="jet-tt-col">
+                  <div class="jet-tt-dir hk">香港（上環）→ 澳門</div>
+                  <div class="jet-tt-block">
+                    <div class="jet-tt-label">外港碼頭 · 日航</div>
+                    <div class="jet-tt-times">07:30, 08:00, 08:30, 09:00, 09:30, 10:00, 10:30, 11:00, 11:30, 12:00, 12:30, 13:00, 14:00, 14:30, 15:00, 15:30, 16:00, 16:30, 17:30</div>
+                  </div>
+                  <div class="jet-tt-block night">
+                    <div class="jet-tt-label">外港碼頭 · 夜航 🌙</div>
+                    <div class="jet-tt-times">18:30, 19:30, 20:30, 21:30, 23:00</div>
+                  </div>
+                  <div class="jet-tt-block">
+                    <div class="jet-tt-label">氹仔碼頭 · 日航</div>
+                    <div class="jet-tt-times">11:30, 14:30, 18:00</div>
+                  </div>
+                  <div class="jet-tt-block night">
+                    <div class="jet-tt-label">氹仔碼頭 · 夜航 🌙</div>
+                    <div class="jet-tt-times">21:00</div>
+                  </div>
+                </div>
+                <div class="jet-tt-col">
+                  <div class="jet-tt-dir mac">澳門 → 香港（上環）</div>
+                  <div class="jet-tt-block">
+                    <div class="jet-tt-label">外港碼頭 · 日航</div>
+                    <div class="jet-tt-times">07:30, 08:30, 09:00, 09:30, 10:00, 10:30, 11:00, 11:30, 12:00, 12:30, 13:00, 14:00, 14:30, 15:00, 15:30, 16:00, 16:30, 17:00, 18:00</div>
+                  </div>
+                  <div class="jet-tt-block night">
+                    <div class="jet-tt-label">外港碼頭 · 夜航 🌙</div>
+                    <div class="jet-tt-times">19:00, 20:00, 21:00, 22:00, 23:00</div>
+                  </div>
+                  <div class="jet-tt-block">
+                    <div class="jet-tt-label">氹仔碼頭 · 日航</div>
+                    <div class="jet-tt-times">13:00, 17:30</div>
+                  </div>
+                  <div class="jet-tt-block night">
+                    <div class="jet-tt-label">氹仔碼頭 · 夜航 🌙</div>
+                    <div class="jet-tt-times">19:30, 23:30</div>
+                  </div>
+                </div>
+              </div>
+              <p style="font-size:10px;color:var(--dim);margin-top:4px;padding:0 2px">班次按季節調整，出發前請確認最新時間表</p>
+            </div>
+
+            <!-- 至尊轎車 -->
+            <div class="ferry-route-panel" id="jf-vip">
+              <div class="jet-vip-badge">尊享服務 · 獨立艙廂</div>
+              <div class="jet-tt-wrap">
+                <div class="jet-tt-col">
+                  <div class="jet-tt-dir hk">香港（上環）→ 澳門（外港）</div>
+                  <div class="jet-tt-block">
+                    <div class="jet-tt-label">班次</div>
+                    <div class="jet-tt-times">12:45, 14:15, 15:45, 16:45, 17:15, 18:00, 19:00, 20:00, 21:00, 22:00</div>
+                  </div>
+                </div>
+                <div class="jet-tt-col">
+                  <div class="jet-tt-dir mac">澳門（外港）→ 香港（上環）</div>
+                  <div class="jet-tt-block">
+                    <div class="jet-tt-label">班次</div>
+                    <div class="jet-tt-times">12:45, 14:15, 15:45, 17:15, 18:30, 19:30, 20:30, 20:45, 21:30, 22:30</div>
+                  </div>
+                </div>
+              </div>
+              <p style="font-size:11px;color:var(--dim);margin-top:8px">以上班次於 2025 年 10 月 6 日起生效</p>
+            </div>
+
+            <!-- 免費酒店接駁 -->
+            <div class="tp-section-title" style="margin-top:20px">🏨 免費接駁巴士</div>
+            <div class="tp-info-card">
+              <div class="tp-info-row"><span class="tp-info-label">威尼斯人</span><span class="tp-info-val">外港 / 氹仔碼頭均有接駁</span></div>
+              <div class="tp-info-row"><span class="tp-info-label">澳門銀河</span><span class="tp-info-val">外港碼頭免費巴士</span></div>
+              <div class="tp-info-row"><span class="tp-info-label">巴黎人</span><span class="tp-info-val">外港 / 氹仔均有接駁</span></div>
+              <div class="tp-info-row"><span class="tp-info-label">新濠天地</span><span class="tp-info-val">外港碼頭免費巴士</span></div>
+            </div>
+
+            <div class="tp-tip-box">
+              <div class="tp-tip-title">✨ 旅遊貼士</div>
+              <div class="tp-tip-text">建議出發前 1–2 週網上購票，旺季尤其早買。回程記得也訂好！夜航享受海上夜景也很浪漫 🌙</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- PAGE: ITINERARY -->
+    <div class="page" id="page-itinerary">
+      <div class="page-hero"><svg viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="mhsi" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#060a18"/><stop offset="100%" stop-color="#1a2548"/></linearGradient></defs><rect width="800" height="140" fill="url(#mhsi)"/><rect x="0" y="80" width="800" height="60" fill="#081828"/><rect x="20" y="35" width="18" height="85" rx="1" fill="#162240"/><rect x="45" y="22" width="24" height="98" rx="1" fill="#1a2e50"/><rect x="77" y="42" width="16" height="78" rx="1" fill="#162038"/><rect x="100" y="14" width="30" height="106" rx="1" fill="#1a2e50"/><rect x="138" y="38" width="20" height="82" rx="1" fill="#162240"/><rect x="166" y="8" width="14" height="112" rx="1" fill="#223055"/><rect x="188" y="48" width="26" height="72" rx="1" fill="#162038"/><rect x="222" y="28" width="18" height="92" rx="1" fill="#1a2e50"/><rect x="248" y="52" width="32" height="68" rx="1" fill="#162240"/><rect x="288" y="32" width="16" height="88" rx="1" fill="#162038"/><rect x="312" y="16" width="22" height="104" rx="1" fill="#1a2e50"/><rect x="342" y="44" width="18" height="76" rx="1" fill="#162240"/><rect x="368" y="20" width="26" height="100" rx="1" fill="#1a2e50"/><rect x="402" y="38" width="14" height="82" rx="1" fill="#162038"/><rect x="424" y="28" width="20" height="92" rx="1" fill="#162240"/><g opacity="0.55"><rect x="25" y="42" width="4" height="5" rx="1" fill="#ffe8a0"/><rect x="50" y="30" width="4" height="5" rx="1" fill="#ffcc60"/><rect x="106" y="20" width="4" height="5" rx="1" fill="#ffe8a0"/><rect x="171" y="16" width="3" height="4" rx="1" fill="#a0c8ff"/><rect x="227" y="35" width="4" height="5" rx="1" fill="#ffe8a0"/><rect x="255" y="60" width="4" height="5" rx="1" fill="#ffcc60"/><rect x="317" y="23" width="4" height="5" rx="1" fill="#ffe8a0"/><rect x="347" y="50" width="3" height="4" rx="1" fill="#ffe8a0"/><rect x="373" y="27" width="4" height="5" rx="1" fill="#a0c8ff"/></g><g opacity="0.45"><circle cx="150" cy="10" r="0.9" fill="white"/><circle cx="270" cy="6" r="1" fill="white"/><circle cx="390" cy="8" r="1.1" fill="#ffe8aa"/><circle cx="500" cy="5" r="0.8" fill="white"/><circle cx="600" cy="10" r="1" fill="white"/><circle cx="700" cy="7" r="0.9" fill="white"/></g></svg><div class="page-hero-overlay"><div class="page-hero-label">Day by Day</div><div class="page-hero-title">行程規劃</div></div></div>
+      <div class="container">
+
+      <!-- ── 航班資訊 ── -->
+      <div class="info-block" style="margin-top:24px">
+        <div class="info-block-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+          航班資訊
+        </div>
+        <div class="info-row">
+          <div class="info-row-left">
+            <span class="info-badge out">去程</span>
+            <span class="info-flight-num">BR 891</span>
+          </div>
+          <div class="info-route">
+            <div class="info-pt">
+              <div class="info-time">07:00</div>
+              <div class="info-city">桃園<span class="info-term">T2</span></div>
+            </div>
+            <div class="info-line">
+              <div class="info-bar"></div>
+              <span class="info-plane">✈</span>
+              <div class="info-bar"></div>
+              <div class="info-dur">1h 50m</div>
+            </div>
+            <div class="info-pt right">
+              <div class="info-time">08:50</div>
+              <div class="info-city">香港<span class="info-term">抵達</span></div>
+            </div>
+          </div>
+          <div class="info-date">09/16</div>
+        </div>
+        <div class="info-divider"></div>
+        <div class="info-row">
+          <div class="info-row-left">
+            <span class="info-badge ret">回程</span>
+            <span class="info-flight-num">BR 858</span>
+          </div>
+          <div class="info-route">
+            <div class="info-pt">
+              <div class="info-time">21:05</div>
+              <div class="info-city">香港<span class="info-term">T1</span></div>
+            </div>
+            <div class="info-line">
+              <div class="info-bar"></div>
+              <span class="info-plane">✈</span>
+              <div class="info-bar"></div>
+              <div class="info-dur">1h 45m</div>
+            </div>
+            <div class="info-pt right">
+              <div class="info-time">22:50</div>
+              <div class="info-city">桃園<span class="info-term">抵達</span></div>
+            </div>
+          </div>
+          <div class="info-date">09/19</div>
+        </div>
+      </div>
+
+      <!-- ── 住宿資訊 ── -->
+      <div class="info-block">
+        <div class="info-block-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          住宿資訊
+        </div>
+        <div id="hotel-list"></div>
+        <button class="add-hotel-btn" onclick="openHotelEdit()">＋ 新增住宿</button>
+      </div>
+
+        <!-- Day tabs -->
+        <div class="itin-top">
+          <div class="day-tabs">
+            <button class="day-tab active" onclick="switchDay(0,this)">Day 1</button>
+            <button class="day-tab" onclick="switchDay(1,this)">Day 2</button>
+            <button class="day-tab" onclick="switchDay(2,this)">Day 3</button>
+            <button class="day-tab" onclick="switchDay(3,this)">Day 4</button>
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--dim);margin-bottom:12px;margin-top:8px">點擊文字可直接編輯 &nbsp;·&nbsp; ⠿ 拖曳排序</p>
+    <div class="day-panel active" id="day-0">
+      <div class="day-meta">
+        <div class="day-number">01</div>
+        <div class="day-info">
+          <h3 contenteditable="true" spellcheck="false">09/16 — 抵達香港</h3>
+          <p contenteditable="true" spellcheck="false">香港 · 第一天</p>
+        </div>
+        <div class="day-tags">
+          <span class="tag tag-red" contenteditable="true" spellcheck="false">香港</span>
+        </div>
+      </div>
+      <div class="timeline sortable" id="timeline-0">
+        <div class="timeline-item" draggable="true">
+          <div class="timeline-time" contenteditable="true" spellcheck="false">08:50</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="drag-handle" title="拖曳排序">⠿</div>
+            <div class="timeline-name" contenteditable="true" spellcheck="false">抵達香港國際機場</div>
+            <div class="timeline-desc" contenteditable="true" spellcheck="false">點擊可編輯備註⋯</div>
+          </div>
+        </div>
+        <div class="timeline-item" draggable="true">
+          <div class="timeline-time" contenteditable="true" spellcheck="false">時間</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="drag-handle" title="拖曳排序">⠿</div>
+            <div class="timeline-name" contenteditable="true" spellcheck="false">景點 / 活動名稱</div>
+            <div class="timeline-desc" contenteditable="true" spellcheck="false">點擊可編輯備註⋯</div>
+          </div>
+        </div>
+      </div>
+      <button class="add-item-btn" onclick="addItem(0)">＋ 新增行程</button>
+    </div>
+    <!-- DAY 2 -->
+    <div class="day-panel" id="day-1">
+      <div class="day-meta">
+        <div class="day-number">02</div>
+        <div class="day-info">
+          <h3 contenteditable="true" spellcheck="false">09/17 — 自行填入</h3>
+          <p contenteditable="true" spellcheck="false">地點 · 主題</p>
+        </div>
+        <div class="day-tags">
+          <span class="tag tag-red" contenteditable="true" spellcheck="false">香港</span>
+        </div>
+      </div>
+      <div class="timeline sortable" id="timeline-1">
+        <div class="timeline-item" draggable="true">
+          <div class="timeline-time" contenteditable="true" spellcheck="false">時間</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="drag-handle" title="拖曳排序">⠿</div>
+            <div class="timeline-name" contenteditable="true" spellcheck="false">景點 / 活動名稱</div>
+            <div class="timeline-desc" contenteditable="true" spellcheck="false">點擊可編輯備註⋯</div>
+          </div>
+        </div>
+        <div class="timeline-item" draggable="true">
+          <div class="timeline-time" contenteditable="true" spellcheck="false">時間</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="drag-handle" title="拖曳排序">⠿</div>
+            <div class="timeline-name" contenteditable="true" spellcheck="false">景點 / 活動名稱</div>
+            <div class="timeline-desc" contenteditable="true" spellcheck="false">點擊可編輯備註⋯</div>
+          </div>
+        </div>
+      </div>
+      <button class="add-item-btn" onclick="addItem(1)">＋ 新增行程</button>
+    </div>
+    <!-- DAY 3 -->
+    <div class="day-panel" id="day-2">
+      <div class="day-meta">
+        <div class="day-number">03</div>
+        <div class="day-info">
+          <h3 contenteditable="true" spellcheck="false">09/18 — 自行填入</h3>
+          <p contenteditable="true" spellcheck="false">地點 · 主題</p>
+        </div>
+        <div class="day-tags">
+          <span class="tag tag-gold" contenteditable="true" spellcheck="false">澳門</span>
+        </div>
+      </div>
+      <div class="timeline sortable" id="timeline-2">
+        <div class="timeline-item" draggable="true">
+          <div class="timeline-time" contenteditable="true" spellcheck="false">時間</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="drag-handle" title="拖曳排序">⠿</div>
+            <div class="timeline-name" contenteditable="true" spellcheck="false">景點 / 活動名稱</div>
+            <div class="timeline-desc" contenteditable="true" spellcheck="false">點擊可編輯備註⋯</div>
+          </div>
+        </div>
+        <div class="timeline-item" draggable="true">
+          <div class="timeline-time" contenteditable="true" spellcheck="false">時間</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="drag-handle" title="拖曳排序">⠿</div>
+            <div class="timeline-name" contenteditable="true" spellcheck="false">景點 / 活動名稱</div>
+            <div class="timeline-desc" contenteditable="true" spellcheck="false">點擊可編輯備註⋯</div>
+          </div>
+        </div>
+      </div>
+      <button class="add-item-btn" onclick="addItem(2)">＋ 新增行程</button>
+    </div>
+    <!-- DAY 4 -->
+    <div class="day-panel" id="day-3">
+      <div class="day-meta">
+        <div class="day-number">04</div>
+        <div class="day-info">
+          <h3 contenteditable="true" spellcheck="false">09/19 — 回程</h3>
+          <p contenteditable="true" spellcheck="false">香港 · 最後一天</p>
+        </div>
+        <div class="day-tags">
+          <span class="tag tag-red" contenteditable="true" spellcheck="false">香港</span>
+        </div>
+      </div>
+      <div class="timeline sortable" id="timeline-3">
+        <div class="timeline-item" draggable="true">
+          <div class="timeline-time" contenteditable="true" spellcheck="false">時間</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="drag-handle" title="拖曳排序">⠿</div>
+            <div class="timeline-name" contenteditable="true" spellcheck="false">景點 / 活動名稱</div>
+            <div class="timeline-desc" contenteditable="true" spellcheck="false">點擊可編輯備註⋯</div>
+          </div>
+        </div>
+        <div class="timeline-item" draggable="true">
+          <div class="timeline-time" contenteditable="true" spellcheck="false">21:05</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-body">
+            <div class="drag-handle" title="拖曳排序">⠿</div>
+            <div class="timeline-name" contenteditable="true" spellcheck="false">BR858 香港機場起飛</div>
+            <div class="timeline-desc" contenteditable="true" spellcheck="false">第一航廈，22:50 抵達桃園。</div>
+          </div>
+        </div>
+      </div>
+      <button class="add-item-btn" onclick="addItem(3)">＋ 新增行程</button>
+    </div>
+
+      </div>
+    </div>
+
+    <!-- PAGE: TOOLS -->
+    <div class="page" id="page-food">
+      <div class="page-hero"><svg viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="mhsfo" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#060a18"/><stop offset="100%" stop-color="#1a2548"/></linearGradient></defs><rect width="800" height="140" fill="url(#mhsfo)"/><rect x="0" y="80" width="800" height="60" fill="#081828"/><rect x="20" y="35" width="18" height="85" rx="1" fill="#162240"/><rect x="45" y="22" width="24" height="98" rx="1" fill="#1a2e50"/><rect x="77" y="42" width="16" height="78" rx="1" fill="#162038"/><rect x="100" y="14" width="30" height="106" rx="1" fill="#1a2e50"/><rect x="138" y="38" width="20" height="82" rx="1" fill="#162240"/><rect x="166" y="8" width="14" height="112" rx="1" fill="#223055"/><rect x="248" y="52" width="32" height="68" rx="1" fill="#162240"/><g opacity="0.5"><rect x="25" y="42" width="4" height="5" rx="1" fill="#ffe8a0"/><rect x="106" y="20" width="4" height="5" rx="1" fill="#ffe8a0"/><rect x="227" y="35" width="4" height="5" rx="1" fill="#ffe8a0"/></g><g opacity="0.4"><circle cx="150" cy="10" r="0.9" fill="white"/><circle cx="390" cy="8" r="1.1" fill="#ffe8aa"/><circle cx="600" cy="10" r="1" fill="white"/></g></svg><div class="page-hero-overlay"><div class="page-hero-label">Travel Tools</div><div class="page-hero-title">旅遊工具</div></div></div>
+
+      <div class="tools-page">
+
+        <!-- ── 工具 tabs ── -->
+        <div class="tools-tabs">
+          <button class="tool-tab active" onclick="switchTool('fx',this)">💱 匯率</button>
+          <button class="tool-tab" onclick="switchTool('ledger',this)">📒 記帳</button>
+          <button class="tool-tab" onclick="switchTool('checklist',this)">✅ 清單</button>
+          <button class="tool-tab" onclick="switchTool('links',this)">🔗 連結</button>
+        </div>
+
+        <!-- ── 匯率換算 ── -->
+        <div class="tool-panel active" id="tool-fx">
+          <div class="tool-scroll">
+            <div class="fx-rates" id="fx-rates">
+              <div class="fx-loading">載入即時匯率中⋯</div>
+            </div>
+            <div class="fx-calc-box">
+              <div class="fx-calc-title">換算計算機</div>
+              <input type="number" id="fx-amount" class="fx-calc-input" placeholder="輸入金額" oninput="calcFx()"/>
+              <select id="fx-from" class="fx-calc-select" onchange="calcFx()">
+                <option value="TWD">台幣 TWD</option>
+                <option value="HKD">港幣 HKD</option>
+                <option value="MOP">澳門幣 MOP</option>
+                <option value="CNY">人民幣 CNY</option>
+              </select>
+              <div class="fx-result" id="fx-result"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 記帳 ── -->
+        <div class="tool-panel" id="tool-ledger">
+          <div class="tool-scroll">
+            <!-- 新增表單 -->
+            <div class="ldg-form">
+              <div class="ldg-form-row">
+                <input type="text" id="ldg-desc" placeholder="消費項目" class="ldg-input" style="flex:1;min-width:0"/>
+                <input type="number" id="ldg-amt" placeholder="金額" class="ldg-input" style="width:82px"/>
+                <select id="ldg-cur" class="ldg-input" style="width:68px">
+                  <option value="HKD">HKD</option>
+                  <option value="MOP">MOP</option>
+                  <option value="TWD">TWD</option>
+                </select>
+              </div>
+              <div class="ldg-form-row">
+                <select id="ldg-cat" class="ldg-input" style="flex:1">
+                  <option value="食物">🍜 食物</option>
+                  <option value="購物">🛍 購物</option>
+                  <option value="交通">🚇 交通</option>
+                  <option value="住宿">🏨 住宿</option>
+                  <option value="景點">🎡 景點</option>
+                  <option value="其他">📦 其他</option>
+                </select>
+                <select id="ldg-who" class="ldg-input" style="flex:1">
+                  <option value="共同">👫 共同</option>
+                  <option value="魚千千">🌸 魚千千</option>
+                  <option value="莊47">🐻 莊47</option>
+                </select>
+                <select id="ldg-day" class="ldg-input" style="flex:1">
+                  <option value="Day 1">Day 1</option>
+                  <option value="Day 2">Day 2</option>
+                  <option value="Day 3">Day 3</option>
+                  <option value="Day 4">Day 4</option>
+                </select>
+                <button onclick="addLedger()" class="ldg-add-btn">＋</button>
+              </div>
+            </div>
+
+            <!-- 篩選 -->
+            <div class="ldg-filters">
+              <button class="ldg-filter active" onclick="setLdgFilter('all',this)">全部</button>
+              <button class="ldg-filter" onclick="setLdgFilter('Day 1',this)">Day 1</button>
+              <button class="ldg-filter" onclick="setLdgFilter('Day 2',this)">Day 2</button>
+              <button class="ldg-filter" onclick="setLdgFilter('Day 3',this)">Day 3</button>
+              <button class="ldg-filter" onclick="setLdgFilter('Day 4',this)">Day 4</button>
+            </div>
+
+            <div id="ledger-list"></div>
+
+            <!-- 合計 收合區塊 -->
+            <div class="ldg-summary-wrap" id="ldg-summary-wrap" style="display:none">
+              <button class="ldg-summary-toggle" id="ldg-summary-toggle" onclick="toggleLdgSummary()">
+                <span>💰 查看合計</span>
+                <span class="ldg-summary-arrow" id="ldg-summary-arrow">›</span>
+              </button>
+              <div class="ldg-summary-body" id="ldg-summary-body">
+                <div id="ledger-total"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── 打包清單 ── -->
+        <div class="tool-panel" id="tool-checklist">
+          <!-- 固定頂部：分類 tabs + 新增 -->
+          <div class="cl-header">
+            <div class="cl-tabs">
+              <button class="cl-tab active" onclick="switchCl('her',this)">🌸 千千</button>
+              <button class="cl-tab" onclick="switchCl('him',this)">🐻 莊47</button>
+              <button class="cl-tab" onclick="switchCl('todo',this)">📋 待辦</button>
+            </div>
+            <div class="cl-add-row">
+              <input type="text" id="cl-input" placeholder="新增項目…" onkeydown="if(event.key==='Enter')addCheckItem()"/>
+              <button onclick="addCheckItem()" class="ldg-add-btn">＋</button>
+            </div>
+            <div class="cl-progress" id="cl-progress"></div>
+          </div>
+          <!-- 可捲動清單 -->
+          <div class="cl-scroll" id="cl-list"></div>
+        </div>
+
+        <!-- ── 實用連結 ── -->
+        <div class="tool-panel" id="tool-links">
+          <div class="tool-scroll">
+            <div id="links-list"></div>
+            <button class="links-add-btn" onclick="openLinkEdit()">＋ 新增連結</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PAGE: CHECKIN -->
+    <div class="page" id="page-tips">
+      <div class="page-hero"><svg viewBox="0 0 800 140" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="mhst" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#060a18"/><stop offset="100%" stop-color="#1a2548"/></linearGradient></defs><rect width="800" height="140" fill="url(#mhst)"/><rect x="0" y="80" width="800" height="60" fill="#081828"/><rect x="20" y="35" width="18" height="85" rx="1" fill="#162240"/><rect x="45" y="22" width="24" height="98" rx="1" fill="#1a2e50"/><rect x="77" y="42" width="16" height="78" rx="1" fill="#162038"/><rect x="248" y="52" width="32" height="68" rx="1" fill="#162240"/><g opacity="0.5"><rect x="25" y="42" width="4" height="5" rx="1" fill="#ffe8a0"/><rect x="106" y="20" width="4" height="5" rx="1" fill="#ffe8a0"/></g><g opacity="0.4"><circle cx="150" cy="10" r="0.9" fill="white"/><circle cx="390" cy="8" r="1.1" fill="#ffe8aa"/><circle cx="600" cy="10" r="1" fill="white"/></g></svg><div class="page-hero-overlay"><div class="page-hero-label">Must Visit</div><div class="page-hero-title">打卡清單</div></div></div>
+
+      <div class="checkin-page">
+        <!-- 城市 tabs -->
+        <div class="ci-tabs">
+          <button class="ci-tab active" onclick="switchCity('hk',this)">🇭🇰 香港</button>
+          <button class="ci-tab" onclick="switchCity('mac',this)">🎰 澳門</button>
+        </div>
+
+        <!-- 進度條 -->
+        <div class="ci-progress-wrap">
+          <div class="ci-progress-bar"><div class="ci-progress-fill" id="ci-fill"></div></div>
+          <div class="ci-progress-text" id="ci-progress-text"></div>
+        </div>
+
+        <!-- 景點列表 -->
+        <div class="ci-list" id="ci-list"></div>
+
+        <!-- 新增按鈕 -->
+        <div class="ci-add-btn-wrap">
+          <button class="links-add-btn" onclick="openCiEdit()">＋ 新增景點</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end #pages -->
+
+  <!-- Checkin edit modal -->
+  <div class="link-modal" id="ci-modal" onclick="if(event.target===this)closeCiEdit()">
+    <div class="link-modal-sheet">
+      <div class="link-modal-header">
+        <span class="link-modal-title" id="ci-modal-title">新增景點</span>
+        <button class="link-modal-close" onclick="closeCiEdit()">×</button>
+      </div>
+      <div class="link-modal-body">
+        <input class="link-modal-input" id="ci-emoji" placeholder="Emoji（例如 🏰）" maxlength="4"/>
+        <input class="link-modal-input" id="ci-name" placeholder="景點名稱"/>
+        <input class="link-modal-input" id="ci-desc" placeholder="簡短描述"/>
+        <input class="link-modal-input" id="ci-url" placeholder="Google Maps 連結或任意網址（選填）" type="url"/>
+        <button class="link-modal-save" onclick="saveCiEdit()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hotel edit modal -->
+  <div class="link-modal" id="hotel-modal" onclick="if(event.target===this)closeHotelEdit()">
+    <div class="link-modal-sheet">
+      <div class="link-modal-header">
+        <span class="link-modal-title" id="hotel-modal-title">新增住宿</span>
+        <button class="link-modal-close" onclick="closeHotelEdit()">×</button>
+      </div>
+      <div class="link-modal-body">
+        <input class="link-modal-input" id="hm-nights" placeholder="日期（例如：09/16 — 09/19）"/>
+        <input class="link-modal-input" id="hm-name" placeholder="酒店 / 民宿名稱"/>
+        <input class="link-modal-input" id="hm-sub" placeholder="地址 / 備註"/>
+        <button class="link-modal-save" onclick="saveHotelEdit()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Link edit modal -->
+  <div class="link-modal" id="link-modal" onclick="if(event.target===this)closeLinkEdit()">
+    <div class="link-modal-sheet">
+      <div class="link-modal-header">
+        <span class="link-modal-title" id="link-modal-title">新增連結</span>
+        <button class="link-modal-close" onclick="closeLinkEdit()">×</button>
+      </div>
+      <div class="link-modal-body">
+        <input class="link-modal-input" id="lm-emoji" placeholder="Emoji 圖示（例如 🌐）" maxlength="4"/>
+        <input class="link-modal-input" id="lm-name" placeholder="名稱（例如：香港天文台）"/>
+        <input class="link-modal-input" id="lm-sub" placeholder="描述（例如：颱風 / 天氣查詢）"/>
+        <input class="link-modal-input" id="lm-url" placeholder="網址（https://...）" type="url"/>
+        <button class="link-modal-save" onclick="saveLinkEdit()">儲存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BOTTOM TAB BAR ═══ -->
+  <nav class="tab-bar">
+    <div class="tab-bar-inner">
+      <button class="tab-btn" id="tab-flights" onclick="showPage('flights')">
+        <span class="ti">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+        </span>
+        <span class="tl">交通</span>
+      </button>
+      <button class="tab-btn" id="tab-itinerary" onclick="showPage('itinerary')">
+        <span class="ti">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="14" stroke-width="2.2"/><line x1="12" y1="14" x2="12" y2="14" stroke-width="2.2"/>
+          </svg>
+        </span>
+        <span class="tl">行程</span>
+      </button>
+      <button class="tab-btn active" id="tab-home" onclick="showPage('home')">
+        <span class="ti">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 13 15 13 15 21"/>
+          </svg>
+        </span>
+        <span class="tl">首頁</span>
+      </button>
+      <button class="tab-btn" id="tab-food" onclick="showPage('food')">
+        <span class="ti">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/><circle cx="18.5" cy="17.5" r="3.5"/>
+          </svg>
+        </span>
+        <span class="tl">工具</span>
+      </button>
+      <button class="tab-btn" id="tab-tips" onclick="showPage('tips')">
+        <span class="ti">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        </span>
+        <span class="tl">打卡</span>
+      </button>
+    </div>
+    <div class="tab-bar-safe"></div>
+  </nav>
+
+</div><!-- end #app -->
+
+<script>
+// ── SPA page switching ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  // Scroll to top of new page
+  document.getElementById('page-' + id).scrollTop = 0;
+}
+
+// Day data for unified card
+const dayData = [
+  { num:'01', tag:'香港', mac:false },
+  { num:'02', tag:'香港', mac:false },
+  { num:'03', tag:'澳門', mac:true  },
+  { num:'04', tag:'香港', mac:false }
+];
+
+// ── Day tab switching ──
+function switchDay(index, btn) {
+  document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('day-' + index).classList.add('active');
+  btn.classList.add('active');
+  syncHomeDays();
+}
+
+// ── Go to day from home ──
+function goToDay(index) {
+  showPage('itinerary');
+  setTimeout(() => {
+    const tabs = document.querySelectorAll('.day-tab');
+    if (tabs[index]) switchDay(index, tabs[index]);
+  }, 50);
+}
+
+function goToItineraryInfo() {
+  showPage('itinerary');
+  setTimeout(() => {
+    document.querySelector('.info-block').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+// ── Hotel management ──
+let hotelItems = [
+  { id: 1, nights: '09/16 — 09/19', name: '點擊編輯酒店名稱', sub: '地址 / 備註' }
+];
+let hotelNextId = 2;
+let hotelEditId = null;
+
+function renderHotels() {
+  const el = document.getElementById('hotel-list');
+  if (!el) return;
+  el.innerHTML = hotelItems.length === 0
+    ? '<div style="text-align:center;color:var(--dim);font-size:13px;padding:12px 0">尚未新增住宿</div>'
+    : hotelItems.map(h => `
+      <div class="hotel-item" style="position:relative">
+        <div class="hotel-nights">${h.nights}</div>
+        <div class="hotel-name">${h.name}</div>
+        <div class="hotel-sub">${h.sub}</div>
+        <div class="hotel-item-actions">
+          <button class="link-act-btn" onclick="openHotelEdit(${h.id})" title="編輯">✎</button>
+          <button class="link-act-btn del" onclick="delHotel(${h.id})" title="刪除">✕</button>
+        </div>
+      </div>`
+    ).join('');
+}
+
+function openHotelEdit(id) {
+  hotelEditId = id || null;
+  const title = document.getElementById('hotel-modal-title');
+  if (id) {
+    const h = hotelItems.find(i => i.id === id);
+    if (!h) return;
+    document.getElementById('hm-nights').value = h.nights;
+    document.getElementById('hm-name').value   = h.name;
+    document.getElementById('hm-sub').value    = h.sub;
+    title.textContent = '編輯住宿';
+  } else {
+    document.getElementById('hm-nights').value = '';
+    document.getElementById('hm-name').value   = '';
+    document.getElementById('hm-sub').value    = '';
+    title.textContent = '新增住宿';
+  }
+  document.getElementById('hotel-modal').classList.add('open');
+}
+
+function closeHotelEdit() {
+  document.getElementById('hotel-modal').classList.remove('open');
+}
+
+function saveHotelEdit() {
+  const nights = document.getElementById('hm-nights').value.trim() || '日期';
+  const name   = document.getElementById('hm-name').value.trim() || '酒店名稱';
+  const sub    = document.getElementById('hm-sub').value.trim();
+  if (hotelEditId) {
+    const h = hotelItems.find(i => i.id === hotelEditId);
+    if (h) { h.nights = nights; h.name = name; h.sub = sub; }
+  } else {
+    hotelItems.push({ id: hotelNextId++, nights, name, sub });
+  }
+  closeHotelEdit();
+  renderHotels();
+}
+
+function delHotel(id) {
+  hotelItems = hotelItems.filter(i => i.id !== id);
+  renderHotels();
+}
+
+renderHotels();
+
+// ── Add new timeline item ──
+function addItem(dayIndex) {
+  const timeline = document.getElementById('timeline-' + dayIndex);
+  const item = document.createElement('div');
+  item.className = 'timeline-item';
+  item.innerHTML = `
+    <div class="timeline-time" contenteditable="true" spellcheck="false">時間</div>
+    <div class="timeline-dot"></div>
+    <div class="timeline-body">
+      <div class="sort-btns">
+        <button class="sort-btn" onclick="moveItem(this,'up')">▲</button>
+        <button class="sort-btn" onclick="moveItem(this,'down')">▼</button>
+      </div>
+      <div class="timeline-body-content">
+        <div class="timeline-name" contenteditable="true" spellcheck="false">景點 / 活動名稱</div>
+        <div class="timeline-desc" contenteditable="true" spellcheck="false">點擊可編輯備註⋯</div>
+        <div class="timeline-mtr-row">
+          <button class="timeline-mtr-btn" onclick="pickMtrStation(this)">🚇 加入港鐵站</button>
+          <span class="timeline-mtr-tag" style="display:none"></span>
+        </div>
+      </div>
+      <button class="delete-btn" onclick="this.closest('.timeline-item').remove()">✕</button>
+    </div>`;
+  timeline.appendChild(item);
+  item.querySelector('.timeline-name').focus();
+}
+
+function moveItem(btn, dir) {
+  const item = btn.closest('.timeline-item');
+  const parent = item.parentNode;
+  if (dir === 'up' && item.previousElementSibling) {
+    parent.insertBefore(item, item.previousElementSibling);
+  } else if (dir === 'down' && item.nextElementSibling) {
+    parent.insertBefore(item.nextElementSibling, item);
+  }
+}
+
+// Add sort buttons + delete to existing timeline items
+document.querySelectorAll('.timeline-item').forEach(item => {
+  const body = item.querySelector('.timeline-body');
+  if (!body) return;
+  // Remove drag-handle if exists
+  const dh = body.querySelector('.drag-handle');
+  if (dh) dh.remove();
+  item.removeAttribute('draggable');
+
+  // Add sort buttons if not already present
+  if (!body.querySelector('.sort-btns')) {
+    const btns = document.createElement('div');
+    btns.className = 'sort-btns';
+    btns.innerHTML = '<button class="sort-btn" onclick="moveItem(this,\'up\')" title="上移">▲</button><button class="sort-btn" onclick="moveItem(this,\'down\')" title="下移">▼</button>';
+    body.insertBefore(btns, body.firstChild);
+  }
+
+  // Wrap content in timeline-body-content if not already
+  if (!body.querySelector('.timeline-body-content')) {
+    const content = document.createElement('div');
+    content.className = 'timeline-body-content';
+    // Move all children except sort-btns and delete-btn into content
+    [...body.children].forEach(child => {
+      if (!child.classList.contains('sort-btns') && !child.classList.contains('delete-btn')) {
+        content.appendChild(child);
+      }
+    });
+    const delBtn = body.querySelector('.delete-btn');
+    if (delBtn) body.insertBefore(content, delBtn);
+    else body.appendChild(content);
+  }
+
+  // Add delete button if not present
+  if (!body.querySelector('.delete-btn')) {
+    const btn = document.createElement('button');
+    btn.className = 'delete-btn'; btn.title = '刪除'; btn.textContent = '✕';
+    btn.onclick = () => item.remove();
+    body.appendChild(btn);
+  }
+
+  // Add MTR row if not present
+  const content = body.querySelector('.timeline-body-content') || body;
+  if (!content.querySelector('.timeline-mtr-row')) {
+    const mtrRow = document.createElement('div');
+    mtrRow.className = 'timeline-mtr-row';
+    mtrRow.innerHTML = '<button class="timeline-mtr-btn" onclick="pickMtrStation(this)">🚇 加入港鐵站</button><span class="timeline-mtr-tag" style="display:none"></span>';
+    content.appendChild(mtrRow);
+  }
+});
+
+// ── Sync home day cards ──
+function syncHomeDays() {
+  for (let i = 0; i < 4; i++) {
+    const h3  = document.querySelector('#day-' + i + ' .day-info h3');
+    const p   = document.querySelector('#day-' + i + ' .day-info p');
+    const tag = document.querySelector('#day-' + i + ' .day-tags span');
+    if (h3) document.getElementById('hd-title-' + i).textContent = h3.textContent;
+    if (p)  document.getElementById('hd-sub-' + i).textContent  = p.textContent;
+    if (tag) {
+      const el = document.getElementById('hd-tag-' + i);
+      el.textContent = tag.textContent;
+      el.className = 'hd-tag ' + (tag.classList.contains('tag-gold') ? 'tag-mac' : 'tag-hk');
+    }
+  }
+}
+syncHomeDays();
+
+document.getElementById('page-itinerary').addEventListener('input', e => {
+  if (e.target.closest('.day-info') || e.target.closest('.day-tags')) syncHomeDays();
+});
+// ── Jetfoil class switching ──
+function switchJetfoil(id, btn) {
+  btn.closest('.ferry-route-tabs').querySelectorAll('.ferry-rtab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['std','vip'].forEach(k => {
+    const el = document.getElementById('jf-' + k);
+    if (el) el.classList.toggle('active', k === id);
+  });
+}
+
+// ── Ferry route switching ──
+function switchFerryRoute(id, btn) {
+  // 只清天星小輪自己的 tabs 和 panels
+  btn.closest('.ferry-route-tabs').querySelectorAll('.ferry-rtab').forEach(b => b.classList.remove('active'));
+  ['cen','wan'].forEach(k => {
+    const panel = document.getElementById('fr-' + k);
+    if (panel) panel.classList.remove('active');
+  });
+  btn.classList.add('active');
+  const target = document.getElementById('fr-' + id);
+  if (target) target.classList.add('active');
+}
+
+// ── Transport category switching ──
+function switchTransport(id, btn) {
+  document.querySelectorAll('.tcat').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.transport-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tp-' + id).classList.add('active');
+}
+
+// ── MTR Map pinch-zoom + drag ──
+(function() {
+  const wrap = document.getElementById('mtrZoom');
+  const img  = document.getElementById('mtrImg');
+  if (!wrap || !img) return;
+
+  let scale = 1, minScale = 1, maxScale = 5;
+  let tx = 0, ty = 0;
+  let lastDist = 0, lastMidX = 0, lastMidY = 0;
+  let isDragging = false, dragX = 0, dragY = 0;
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function applyTransform() {
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    const iW = img.naturalWidth || img.clientWidth;
+    const iH = img.naturalHeight || img.clientHeight;
+    const maxTx = 0, minTx = W - iW * scale;
+    const maxTy = 0, minTy = H - iH * scale;
+    tx = clamp(tx, Math.min(minTx, 0), Math.max(maxTx, 0));
+    ty = clamp(ty, Math.min(minTy, 0), Math.max(maxTy, 0));
+    img.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+  }
+
+  function dist(t) {
+    const dx = t[0].clientX - t[1].clientX;
+    const dy = t[0].clientY - t[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  function mid(t) {
+    return {
+      x: (t[0].clientX + t[1].clientX) / 2,
+      y: (t[0].clientY + t[1].clientY) / 2
+    };
+  }
+
+  wrap.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      lastDist = dist(e.touches);
+      const m = mid(e.touches);
+      const r = wrap.getBoundingClientRect();
+      lastMidX = m.x - r.left;
+      lastMidY = m.y - r.top;
+    } else if (e.touches.length === 1) {
+      isDragging = true;
+      dragX = e.touches[0].clientX - tx;
+      dragY = e.touches[0].clientY - ty;
+    }
+  }, { passive: false });
+
+  wrap.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      const d = dist(e.touches);
+      const m = mid(e.touches);
+      const r = wrap.getBoundingClientRect();
+      const mx = m.x - r.left, my = m.y - r.top;
+      const ratio = d / lastDist;
+      const newScale = clamp(scale * ratio, minScale, maxScale);
+      tx = mx - (mx - tx) * (newScale / scale);
+      ty = my - (my - ty) * (newScale / scale);
+      scale = newScale;
+      lastDist = d;
+      applyTransform();
+    } else if (e.touches.length === 1 && isDragging) {
+      tx = e.touches[0].clientX - dragX;
+      ty = e.touches[0].clientY - dragY;
+      applyTransform();
+    }
+  }, { passive: false });
+
+  wrap.addEventListener('touchend', e => {
+    if (e.touches.length < 2) lastDist = 0;
+    if (e.touches.length === 0) isDragging = false;
+  });
+
+  // Mouse wheel zoom (desktop)
+  wrap.addEventListener('wheel', e => {
+    e.preventDefault();
+    const r = wrap.getBoundingClientRect();
+    const mx = e.clientX - r.left, my = e.clientY - r.top;
+    const factor = e.deltaY < 0 ? 1.12 : 0.9;
+    const newScale = clamp(scale * factor, minScale, maxScale);
+    tx = mx - (mx - tx) * (newScale / scale);
+    ty = my - (my - ty) * (newScale / scale);
+    scale = newScale;
+    applyTransform();
+  }, { passive: false });
+
+  // Mouse drag (desktop)
+  wrap.addEventListener('mousedown', e => {
+    isDragging = true;
+    dragX = e.clientX - tx;
+    dragY = e.clientY - ty;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    tx = e.clientX - dragX;
+    ty = e.clientY - dragY;
+    applyTransform();
+  });
+  window.addEventListener('mouseup', () => { isDragging = false; });
+
+  img.onload = applyTransform;
+})();
+
+// ── Editable links ──
+let linkItems = [
+  { id:1, emoji:'🚢', name:'TurboJET 噴射船', sub:'港澳船票購買', url:'https://www.turbojet.com.hk' },
+  { id:2, emoji:'🚇', name:'香港地鐵 MTR', sub:'路線查詢 / 票價計算', url:'https://www.mtr.com.hk' },
+  { id:3, emoji:'⛴', name:'天星小輪', sub:'時間表 / 碼頭資訊', url:'https://www.nwff.com.hk' },
+  { id:4, emoji:'🎫', name:'Klook', sub:'景點門票 / 體驗活動', url:'https://www.klook.com' },
+  { id:5, emoji:'🌦', name:'香港天文台', sub:'香港即時天氣 / 颱風資訊', url:'https://www.hko.gov.hk' },
+  { id:6, emoji:'🌤', name:'澳門氣象局 SMG', sub:'澳門天氣預報', url:'https://www.smg.gov.mo' },
+];
+let linkNextId = 10;
+let linkEditId = null;
+
+function renderLinks() {
+  const el = document.getElementById('links-list');
+  if (!el) return;
+  el.innerHTML = linkItems.map(l => `
+    <div class="link-card" onclick="window.open('${l.url}','_blank')">
+      <span class="link-icon">${l.emoji}</span>
+      <div class="link-info">
+        <div class="link-name">${l.name}</div>
+        <div class="link-sub">${l.sub}</div>
+      </div>
+      <div class="link-actions" onclick="event.stopPropagation()">
+        <button class="link-act-btn" onclick="openLinkEdit(${l.id})" title="編輯">✎</button>
+        <button class="link-act-btn del" onclick="delLink(${l.id})" title="刪除">✕</button>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function openLinkEdit(id) {
+  linkEditId = id || null;
+  const modal = document.getElementById('link-modal');
+  const title = document.getElementById('link-modal-title');
+  if (id) {
+    const l = linkItems.find(i => i.id === id);
+    if (!l) return;
+    document.getElementById('lm-emoji').value = l.emoji;
+    document.getElementById('lm-name').value  = l.name;
+    document.getElementById('lm-sub').value   = l.sub;
+    document.getElementById('lm-url').value   = l.url;
+    title.textContent = '編輯連結';
+  } else {
+    document.getElementById('lm-emoji').value = '';
+    document.getElementById('lm-name').value  = '';
+    document.getElementById('lm-sub').value   = '';
+    document.getElementById('lm-url').value   = '';
+    title.textContent = '新增連結';
+  }
+  modal.classList.add('open');
+}
+
+function closeLinkEdit() {
+  document.getElementById('link-modal').classList.remove('open');
+}
+
+function saveLinkEdit() {
+  const emoji = document.getElementById('lm-emoji').value.trim() || '🔗';
+  const name  = document.getElementById('lm-name').value.trim();
+  const sub   = document.getElementById('lm-sub').value.trim();
+  const url   = document.getElementById('lm-url').value.trim();
+  if (!name || !url) return;
+  if (linkEditId) {
+    const l = linkItems.find(i => i.id === linkEditId);
+    if (l) { l.emoji = emoji; l.name = name; l.sub = sub; l.url = url; }
+  } else {
+    linkItems.push({ id: linkNextId++, emoji, name, sub, url });
+  }
+  closeLinkEdit();
+  renderLinks();
+}
+
+function delLink(id) {
+  linkItems = linkItems.filter(i => i.id !== id);
+  renderLinks();
+}
+
+renderLinks();
+
+// ── PWA: fix safe area bottom dynamically ──
+(function() {
+  function fixSafeArea() {
+    const el = document.querySelector('.tab-bar-safe');
+    if (el) el.style.height = 'env(safe-area-inset-bottom, 0px)';
+  }
+  fixSafeArea();
+  window.addEventListener('resize', fixSafeArea);
+})();
+
+// ── Register Service Worker for offline/PWA ──
+if ('serviceWorker' in navigator) {
+  const swCode = `
+const CACHE = 'hkmacau-v1';
+self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.add('/'))); self.skipWaiting(); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))); self.clients.claim(); });
+self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))); });`;
+  try {
+    const blob = new Blob([swCode], {type:'application/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+  } catch(e) {}
+}
+
+// ── Countdown to departure 2026/09/16 07:00 ──
+(function() {
+  const TARGET = new Date('2026-09-16T07:00:00+08:00');
+
+  function pad(n) { return String(n).padStart(2,'0'); }
+
+  function tick() {
+    const now = new Date();
+    const diff = TARGET - now;
+
+    const dEl = document.getElementById('cd-days');
+    const hEl = document.getElementById('cd-hours');
+    const mEl = document.getElementById('cd-mins');
+    const sEl = document.getElementById('cd-secs');
+    const lEl = document.getElementById('cd-label');
+    if (!dEl) return;
+
+    if (diff <= 0) {
+      dEl.textContent = '00'; hEl.textContent = '00';
+      mEl.textContent = '00'; sEl.textContent = '00';
+      if (lEl) lEl.textContent = '✈ 出發啦！';
+      return;
+    }
+
+    const days  = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins  = Math.floor((diff % 3600000)  / 60000);
+    const secs  = Math.floor((diff % 60000)    / 1000);
+
+    dEl.textContent = days;
+    hEl.textContent = pad(hours);
+    mEl.textContent = pad(mins);
+    sEl.textContent = pad(secs);
+    if (lEl) lEl.textContent = '距離出發';
+  }
+
+  tick();
+  setInterval(tick, 1000);
+})();
+
+// ── Tools page ──
+function switchTool(id, btn) {
+  document.querySelectorAll('.tool-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tool-' + id).classList.add('active');
+}
+
+let fxRates = { HKD: 0.245, MOP: 0.247, CNY: 0.22, TWD: 1 };
+
+async function loadFxRates() {
+  try {
+    const res = await fetch('https://open.er-api.com/v6/latest/TWD');
+    const data = await res.json();
+    if (data.rates) { fxRates = data.rates; fxRates.TWD = 1; renderFxCards(); }
+  } catch(e) { renderFxCards(); }
+}
+
+function renderFxCards() {
+  const el = document.getElementById('fx-rates');
+  if (!el) return;
+  const pairs = [
+    {from:'TWD',to:'HKD',label:'台幣 → 港幣'},
+    {from:'TWD',to:'MOP',label:'台幣 → 澳門幣'},
+    {from:'HKD',to:'TWD',label:'港幣 → 台幣'},
+    {from:'HKD',to:'MOP',label:'港幣 → 澳門幣'},
+  ];
+  el.innerHTML = pairs.map(p => {
+    const rate = (fxRates[p.to] / fxRates[p.from]).toFixed(4);
+    return `<div class="fx-rate-card"><div class="fx-pair">${p.label}</div><div class="fx-rate-val">${rate}</div><div class="fx-rate-sub">1 ${p.from} = ${rate} ${p.to}</div></div>`;
+  }).join('');
+}
+
+function calcFx() {
+  const amt = parseFloat(document.getElementById('fx-amount').value);
+  const from = document.getElementById('fx-from').value;
+  const el = document.getElementById('fx-result');
+  if (!amt || isNaN(amt)) { el.innerHTML = ''; return; }
+  const targets = ['TWD','HKD','MOP','CNY'].filter(c => c !== from);
+  el.innerHTML = targets.map(to => {
+    const rate = fxRates[to] / fxRates[from];
+    return `<div class="fx-line"><span>${to}</span><span>${(amt * rate).toFixed(2)}</span></div>`;
+  }).join('');
+}
+
+loadFxRates();
+
+// Ledger
+let ledgerItems = [];
+let ldgFilter = 'all';
+
+const CAT_EMOJI = { '食物':'🍜','購物':'🛍','交通':'🚇','住宿':'🏨','景點':'🎡','其他':'📦' };
+const WHO_EMOJI = { '共同':'👫','魚千千':'🌸','莊47':'🐻' };
+
+function addLedger() {
+  const desc = document.getElementById('ldg-desc').value.trim();
+  const amt  = parseFloat(document.getElementById('ldg-amt').value);
+  const cur  = document.getElementById('ldg-cur').value;
+  const cat  = document.getElementById('ldg-cat').value;
+  const who  = document.getElementById('ldg-who').value;
+  const day  = document.getElementById('ldg-day').value;
+  if (!desc || isNaN(amt) || amt <= 0) return;
+  ledgerItems.push({ desc, amt, cur, cat, who, day, id: Date.now() });
+  document.getElementById('ldg-desc').value = '';
+  document.getElementById('ldg-amt').value  = '';
+  renderLedger();
+}
+
+function setLdgFilter(f, btn) {
+  ldgFilter = f;
+  document.querySelectorAll('.ldg-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLedger();
+}
+
+function toTWD(amt, cur) {
+  if (!fxRates) return null;
+  return amt * (fxRates['TWD'] / fxRates[cur]);
+}
+
+function toggleLdgSummary() {
+  const body  = document.getElementById('ldg-summary-body');
+  const arrow = document.getElementById('ldg-summary-arrow');
+  const lbl   = document.getElementById('ldg-summary-toggle').querySelector('span:first-child');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+  lbl.textContent = !isOpen ? '💰 收起合計' : '💰 查看合計';
+}
+
+function renderLedger() {
+  const list = document.getElementById('ledger-list');
+  const summaryWrap = document.getElementById('ldg-summary-wrap');
+  const totalEl = document.getElementById('ledger-total');
+  if (!list) return;
+
+  const filtered = ldgFilter === 'all' ? ledgerItems : ledgerItems.filter(i => i.day === ldgFilter);
+
+  list.innerHTML = filtered.length === 0
+    ? '<div style="text-align:center;color:var(--dim);font-size:13px;padding:24px 0">尚未記帳</div>'
+    : filtered.map(item => {
+        const twd = toTWD(item.amt, item.cur);
+        const twdStr = twd ? `≈ TWD ${Math.round(twd)}` : '';
+        return `<div class="ledger-item">
+          <div class="ldg-item-left">
+            <div class="ldg-item-top">
+              <span class="ldg-item-desc">${item.desc}</span>
+              <span class="ldg-item-cat">${CAT_EMOJI[item.cat]||''} ${item.cat}</span>
+            </div>
+            <div class="ldg-item-meta">
+              <span>${WHO_EMOJI[item.who]||''} ${item.who}</span>
+              <span>·</span>
+              <span>${item.day}</span>
+            </div>
+          </div>
+          <div class="ldg-item-right">
+            <span class="ldg-item-amt">${item.amt.toFixed(1)} ${item.cur}</span>
+            <span class="ldg-item-twd">${twdStr}</span>
+          </div>
+          <button class="ldg-item-del" onclick="delLedger(${item.id})">✕</button>
+        </div>`;
+      }).join('');
+
+  if (!filtered.length) {
+    if (summaryWrap) summaryWrap.style.display = 'none';
+    return;
+  }
+  if (summaryWrap) summaryWrap.style.display = 'block';
+
+  const sumsByCur = {};
+  filtered.forEach(i => { sumsByCur[i.cur] = (sumsByCur[i.cur]||0) + i.amt; });
+  const totalTWD = Object.entries(sumsByCur).reduce((acc,[c,v]) => acc + (toTWD(v,c)||0), 0);
+  const sumsByWho = {};
+  filtered.forEach(i => { sumsByWho[i.who] = (sumsByWho[i.who]||0) + (toTWD(i.amt,i.cur)||0); });
+  const sumsByCat = {};
+  filtered.forEach(i => { sumsByCat[i.cat] = (sumsByCat[i.cat]||0) + (toTWD(i.amt,i.cur)||0); });
+
+  if (totalEl) totalEl.innerHTML =
+    '<div class="ldg-grand-total"><span>總花費</span><span>TWD ' + Math.round(totalTWD) + '</span></div>' +
+    '<div class="ldg-total-section">各幣別</div>' +
+    Object.entries(sumsByCur).map(([c,v]) =>
+      `<div class="ldg-total-row"><span>${c}</span><span>${v.toFixed(1)} ≈ TWD ${Math.round(toTWD(v,c))}</span></div>`
+    ).join('') +
+    '<div class="ldg-total-section">分人</div>' +
+    Object.entries(sumsByWho).map(([w,v]) =>
+      `<div class="ldg-total-row"><span>${WHO_EMOJI[w]||''} ${w}</span><span>TWD ${Math.round(v)}</span></div>`
+    ).join('') +
+    '<div class="ldg-total-section">分類</div>' +
+    Object.entries(sumsByCat).map(([c,v]) =>
+      `<div class="ldg-total-row"><span>${CAT_EMOJI[c]||''} ${c}</span><span>TWD ${Math.round(v)}</span></div>`
+    ).join('');
+}
+
+function delLedger(id) {
+  ledgerItems = ledgerItems.filter(i => i.id !== id);
+  renderLedger();
+}
+
+// Checklist
+// Checklist — 3 categories
+const CL_CATS = {
+  her:  { label:'🌸 魚千千行李', items:['護照','機票 / 登機證','八達通卡（旅遊卡）','換匯（港幣 / 澳門幣）','旅遊保險','充電器 / 行動電源','換洗衣物（4天）','藥品 / 常備藥','雨傘 / 輕便雨衣','防曬乳','耳機','保養品 / 化妝包','TurboJET 船票截圖','酒店訂單截圖'] },
+  him:  { label:'🐻 莊47行李',   items:['護照','機票 / 登機證','換洗衣物（4天）','充電器 / 行動電源','耳機','刮鬍刀','換匯（港幣）','藥品 / 常備藥','雨傘','行動電源'] },
+  todo: { label:'📋 待辦事項',   items:['訂 TurboJET 船票','確認酒店 Check-in 時間','下載 Google Maps 離線地圖（香港 / 澳門）','通知電話卡漫遊或買香港SIM','列印 / 截圖重要訂單','確認長榮航班狀態','準備港幣現金','告知家人行程'] },
+};
+
+let clData = {};
+Object.keys(CL_CATS).forEach((cat, gi) => {
+  clData[cat] = CL_CATS[cat].items.map((t, i) => ({ text: t, done: false, id: cat + '_' + i }));
+});
+let clNextId = 1000;
+let clActive = 'her';
+
+function switchCl(cat, btn) {
+  clActive = cat;
+  document.querySelectorAll('.cl-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderChecklist();
+}
+
+function addCheckItem() {
+  const input = document.getElementById('cl-input');
+  const text = input.value.trim();
+  if (!text) return;
+  clData[clActive].push({ text, done: false, id: clActive + '_' + (clNextId++) });
+  input.value = '';
+  renderChecklist();
+}
+
+function toggleCheck(id) {
+  for (const cat of Object.keys(clData)) {
+    const item = clData[cat].find(i => i.id === id);
+    if (item) { item.done = !item.done; break; }
+  }
+  renderChecklist();
+}
+
+function delCheck(id) {
+  for (const cat of Object.keys(clData)) {
+    clData[cat] = clData[cat].filter(i => i.id !== id);
+  }
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const list = document.getElementById('cl-list');
+  const prog = document.getElementById('cl-progress');
+  if (!list) return;
+  const items = clData[clActive] || [];
+  list.innerHTML = items.length === 0
+    ? '<div style="text-align:center;color:var(--dim);font-size:13px;padding:20px 0">清單是空的</div>'
+    : items.map(item =>
+        `<div class="cl-item${item.done?' done':''}">
+          <div class="cl-check" onclick="toggleCheck('${item.id}')">${item.done ? '✓' : ''}</div>
+          <div class="cl-text"
+            contenteditable="true"
+            spellcheck="false"
+            onblur="updateClText('${item.id}',this.textContent)"
+            onclick="event.stopPropagation()"
+          >${item.text}</div>
+          <button class="cl-del" onclick="event.stopPropagation();delCheck('${item.id}')">✕</button>
+        </div>`
+      ).join('');
+  const done = items.filter(i => i.done).length;
+  if (prog) prog.textContent = done + ' / ' + items.length + ' 已完成';
+}
+
+function updateClText(id, text) {
+  const t = text.trim();
+  if (!t) return;
+  for (const cat of Object.keys(clData)) {
+    const item = clData[cat].find(i => i.id === id);
+    if (item) { item.text = t; break; }
+  }
+}
+
+renderChecklist();
+
+// ── 打卡清單 ──
+let ciData = {
+  hk: [
+    { id:'hk1',  emoji:'🌃', name:'維多利亞港夜景',   desc:'太平山頂 / 尖沙咀海濱，必拍夜景',   url:'https://maps.app.goo.gl/victoriaHarbour' },
+    { id:'hk2',  emoji:'⭐', name:'星光大道',          desc:'尖沙咀海旁，維港最美散步路線',       url:'https://maps.google.com/?q=22.2931,114.1742' },
+    { id:'hk3',  emoji:'🚡', name:'太平山頂纜車',      desc:'搭山頂纜車俯瞰香港全景',             url:'https://maps.google.com/?q=22.2707,114.1455' },
+    { id:'hk4',  emoji:'⛴', name:'天星小輪',          desc:'中環↔尖沙咀，維港最浪漫渡輪',        url:'https://maps.google.com/?q=22.2871,114.1601' },
+    { id:'hk5',  emoji:'🏮', name:'廟街夜市',          desc:'油麻地廟街，香港最有特色的夜市',     url:'https://maps.google.com/?q=22.3093,114.1686' },
+    { id:'hk6',  emoji:'🌸', name:'花墟花市',          desc:'太子花墟道，花香四溢的老香港',       url:'https://maps.google.com/?q=22.3244,114.1681' },
+    { id:'hk7',  emoji:'🛍', name:'女人街',            desc:'旺角通菜街，購物殺價天堂',           url:'https://maps.google.com/?q=22.3192,114.1694' },
+    { id:'hk8',  emoji:'💻', name:'鴨寮街',            desc:'深水埗電子零件街，港味十足',         url:'https://maps.google.com/?q=22.3303,114.1622' },
+    { id:'hk9',  emoji:'🏛', name:'志蓮淨苑',          desc:'鑽石山唐代木建築，免費入場',         url:'https://maps.google.com/?q=22.3353,114.2012' },
+    { id:'hk10', emoji:'🌿', name:'南蓮園池',          desc:'鑽石山免費中式庭園，超靚打卡位',     url:'https://maps.google.com/?q=22.3345,114.2026' },
+    { id:'hk11', emoji:'📸', name:'春秧街電車',        desc:'北角，電車穿越市場必拍街景',         url:'https://maps.google.com/?q=22.2911,114.2003' },
+    { id:'hk12', emoji:'☕', name:'西環泳棚',          desc:'堅尼地城，香港特色木棚打卡位',       url:'https://maps.google.com/?q=22.2847,114.1247' },
+    { id:'hk13', emoji:'🍞', name:'蘭芳園',            desc:'中環，絲襪奶茶發源地',               url:'https://maps.google.com/?q=22.2845,114.1548' },
+    { id:'hk14', emoji:'🎭', name:'喜帖街（利東街）',  desc:'灣仔，打燈浪漫小巷',                 url:'https://maps.google.com/?q=22.2763,114.1721' },
+  ],
+  mac: [
+    { id:'mc1',  emoji:'🏰', name:'大三巴牌坊',   desc:'澳門最標誌性建築，必拍角度',         url:'https://maps.google.com/?q=22.1974,113.5391' },
+    { id:'mc2',  emoji:'🌺', name:'媽閣廟',       desc:'澳門最古老的廟宇，世遺之一',         url:'https://maps.google.com/?q=22.1876,113.5353' },
+    { id:'mc3',  emoji:'🗼', name:'澳門旅遊塔',   desc:'澳門天際線地標，可挑戰高空漫步',     url:'https://maps.google.com/?q=22.1874,113.5483' },
+    { id:'mc4',  emoji:'🎰', name:'威尼斯人',     desc:'超巨型室內水城，免費逛超壯觀',       url:'https://maps.google.com/?q=22.1486,113.5683' },
+    { id:'mc5',  emoji:'⛪', name:'玫瑰聖母堂',   desc:'議事亭前地旁，粉色外牆超美',         url:'https://maps.google.com/?q=22.1957,113.5401' },
+    { id:'mc6',  emoji:'🥮', name:'瑪嘉烈蛋撻',   desc:'澳門蛋撻傳奇，出爐即買',             url:'https://maps.google.com/?q=22.1897,113.5401' },
+    { id:'mc7',  emoji:'🌉', name:'澳門大橋',     desc:'氹仔舊橋，拍夕陽最美',               url:'https://maps.google.com/?q=22.1686,113.5583' },
+    { id:'mc8',  emoji:'🏮', name:'議事亭前地',   desc:'澳門最熱鬧的廣場，黑白波浪地磚',     url:'https://maps.google.com/?q=22.1957,113.5398' },
+    { id:'mc9',  emoji:'🎡', name:'官也街',       desc:'氹仔老街，手信名店集中地',           url:'https://maps.google.com/?q=22.1619,113.5581' },
+    { id:'mc10', emoji:'🌆', name:'澳門漁人碼頭', desc:'中西合璧景觀，夜景一流',             url:'https://maps.google.com/?q=22.2058,113.5558' },
+  ],
+};
+
+let ciVisited = { hk: new Set(), mac: new Set() };
+let ciCity = 'hk';
+let ciEditId = null;
+let ciNextId = 100;
+
+function switchCity(city, btn) {
+  ciCity = city;
+  document.querySelectorAll('.ci-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCheckin();
+}
+
+function toggleCheckin(id, e) {
+  e.stopPropagation();
+  if (ciVisited[ciCity].has(id)) ciVisited[ciCity].delete(id);
+  else ciVisited[ciCity].add(id);
+  renderCheckin();
+}
+
+function openMap(url, e) {
+  e.stopPropagation();
+  window.open(url, '_blank');
+}
+
+function openCiEdit(id) {
+  ciEditId = id || null;
+  const title = document.getElementById('ci-modal-title');
+  if (id) {
+    const s = ciData[ciCity].find(i => i.id === id);
+    if (!s) return;
+    document.getElementById('ci-emoji').value = s.emoji;
+    document.getElementById('ci-name').value  = s.name;
+    document.getElementById('ci-desc').value  = s.desc;
+    document.getElementById('ci-url').value   = s.url || '';
+    title.textContent = '編輯景點';
+  } else {
+    document.getElementById('ci-emoji').value = '';
+    document.getElementById('ci-name').value  = '';
+    document.getElementById('ci-desc').value  = '';
+    document.getElementById('ci-url').value   = '';
+    title.textContent = '新增景點';
+  }
+  document.getElementById('ci-modal').classList.add('open');
+}
+
+function closeCiEdit() {
+  document.getElementById('ci-modal').classList.remove('open');
+}
+
+function saveCiEdit() {
+  const emoji = document.getElementById('ci-emoji').value.trim() || '📍';
+  const name  = document.getElementById('ci-name').value.trim();
+  const desc  = document.getElementById('ci-desc').value.trim();
+  const url   = document.getElementById('ci-url').value.trim();
+  if (!name) return;
+  if (ciEditId) {
+    const s = ciData[ciCity].find(i => i.id === ciEditId);
+    if (s) { s.emoji = emoji; s.name = name; s.desc = desc; s.url = url; }
+  } else {
+    ciData[ciCity].push({ id: ciCity + '_' + (ciNextId++), emoji, name, desc, url });
+  }
+  closeCiEdit();
+  renderCheckin();
+}
+
+function delCiSpot(id, e) {
+  e.stopPropagation();
+  ciData[ciCity] = ciData[ciCity].filter(i => i.id !== id);
+  ciVisited[ciCity].delete(id);
+  renderCheckin();
+}
+
+function renderCheckin() {
+  const list = document.getElementById('ci-list');
+  const fill = document.getElementById('ci-fill');
+  const prog = document.getElementById('ci-progress-text');
+  if (!list) return;
+
+  const spots   = ciData[ciCity];
+  const visited = ciVisited[ciCity];
+  const pct = spots.length ? Math.round((visited.size / spots.length) * 100) : 0;
+
+  if (fill) fill.style.width = pct + '%';
+  if (prog) prog.textContent = visited.size + ' / ' + spots.length + ' 已打卡';
+
+  list.innerHTML = spots.length === 0
+    ? '<div style="text-align:center;color:var(--dim);font-size:13px;padding:32px 0">尚未新增景點</div>'
+    : spots.map(s => `
+      <div class="ci-item${visited.has(s.id) ? ' visited' : ''}">
+        <div class="ci-check" onclick="toggleCheckin('${s.id}',event)">${visited.has(s.id) ? '✓' : ''}</div>
+        <div class="ci-emoji" onclick="toggleCheckin('${s.id}',event)">${s.emoji}</div>
+        <div class="ci-info" onclick="toggleCheckin('${s.id}',event)">
+          <div class="ci-name">${s.name}</div>
+          <div class="ci-desc">${s.desc || ''}</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          ${s.url ? `<button class="ci-map-btn" onclick="openMap('${s.url}',event)" title="開啟地圖 / 連結">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </button>` : ''}
+          <button class="ci-map-btn" onclick="openCiEdit('${s.id}')" title="編輯" style="font-size:13px">✎</button>
+          <button class="ci-map-btn" onclick="delCiSpot('${s.id}',event)" title="刪除" style="color:#f08080;font-size:13px">✕</button>
+        </div>
+      </div>`
+    ).join('');
+}
+
+renderCheckin();
+
+// ── Home mini ledger widget ──
+function homeAddLedger() {
+  const desc = document.getElementById('home-ldg-desc').value.trim();
+  const amt  = parseFloat(document.getElementById('home-ldg-amt').value);
+  const cur  = document.getElementById('home-ldg-cur').value;
+  const cat  = document.getElementById('home-ldg-cat').value;
+  const who  = document.getElementById('home-ldg-who').value;
+  const day  = document.getElementById('home-ldg-day').value;
+  if (!desc || isNaN(amt) || amt <= 0) return;
+  ledgerItems.push({ desc, amt, cur, cat, who, day, id: Date.now() });
+  document.getElementById('home-ldg-desc').value = '';
+  document.getElementById('home-ldg-amt').value  = '';
+  renderLedger();
+  renderHomeLedger();
+}
+
+function renderHomeLedger() {
+  const preview = document.getElementById('home-ledger-preview');
+  const summary = document.getElementById('home-ledger-summary');
+  if (!preview) return;
+
+  if (!ledgerItems.length) {
+    preview.innerHTML = '<div class="home-ldg-empty">尚未記帳</div>';
+    summary.style.display = 'none';
+    return;
+  }
+
+  // Show last 3 items
+  const recent = ledgerItems.slice(-3).reverse();
+  preview.innerHTML = recent.map(item =>
+    `<div class="home-ldg-item">
+      <span class="home-ldg-item-desc">${CAT_EMOJI[item.cat]||''} ${item.desc} <span style="color:var(--dim);font-size:10px">${item.day}</span></span>
+      <span class="home-ldg-item-amt">${item.amt.toFixed(0)} ${item.cur}</span>
+    </div>`
+  ).join('');
+
+  if (ledgerItems.length > 3) {
+    preview.innerHTML += `<div style="text-align:center;font-size:11px;color:var(--dim);padding:6px 0">還有 ${ledgerItems.length - 3} 筆…</div>`;
+  }
+
+  // Total in TWD
+  const totalTWD = ledgerItems.reduce((acc, i) => acc + (toTWD(i.amt, i.cur)||0), 0);
+  summary.style.display = 'flex';
+  summary.className = 'home-ldg-summary';
+  summary.innerHTML = `<span>總花費（台幣）</span><span>TWD ${Math.round(totalTWD)}</span>`;
+}
+
+// Hook renderHomeLedger into renderLedger
+const _origRenderLedger = renderLedger;
+renderLedger = function() { _origRenderLedger(); renderHomeLedger(); };
+
+renderHomeLedger();
+
+// ── Weather (Open-Meteo, no API key needed) ──
+const WX_CODE = {
+  0:'晴天',1:'晴時多雲',2:'多雲',3:'陰天',
+  45:'有霧',48:'霧淞',
+  51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',
+  61:'小雨',63:'中雨',65:'大雨',
+  71:'小雪',73:'中雪',75:'大雪',
+  80:'陣雨',81:'陣雨',82:'大陣雨',
+  95:'雷陣雨',96:'雷陣雨夾冰雹',99:'雷陣雨夾冰雹'
+};
+
+const WX_ICON = {
+  0:'☀️',1:'🌤',2:'⛅️',3:'☁️',
+  45:'🌫',48:'🌫',
+  51:'🌦',53:'🌦',55:'🌧',
+  61:'🌧',63:'🌧',65:'🌧',
+  71:'🌨',73:'🌨',75:'❄️',
+  80:'🌦',81:'🌧',82:'⛈',
+  95:'⛈',96:'⛈',99:'⛈'
+};
+
+async function fetchWeather(lat, lon, elId, cityName) {
+  const el = document.getElementById(elId);
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Asia%2FHong_Kong&wind_speed_unit=kmh`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const c = data.current;
+    const code = c.weather_code;
+    const icon = WX_ICON[code] || '🌡';
+    const desc = WX_CODE[code] || '—';
+    el.innerHTML = `
+      <div class="wx-inner">
+        <div class="wx-city-name">${cityName}</div>
+        <div class="wx-main">
+          <span class="wx-icon">${icon}</span>
+          <span class="wx-temp">${Math.round(c.temperature_2m)}</span>
+          <span class="wx-unit">°C</span>
+        </div>
+        <div class="wx-desc">${desc}</div>
+        <div class="wx-details">
+          <span class="wx-detail">💧 ${c.relative_humidity_2m}%</span>
+          <span class="wx-detail">💨 ${Math.round(c.wind_speed_10m)} km/h</span>
+        </div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="wx-error">⚠ 無法取得天氣</div>`;
+  }
+}
+
+function loadWeather() {
+  fetchWeather(22.3193, 114.1694, 'wx-hk',  '香港 Hong Kong');
+  fetchWeather(22.1987, 113.5439, 'wx-mac', '澳門 Macau');
+  const now = new Date();
+  document.getElementById('weather-updated').textContent =
+    `更新於 ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+}
+
+loadWeather();
+// Refresh every 10 minutes
+setInterval(loadWeather, 10 * 60 * 1000);
+
+// ── MTR station picker for itinerary items ──
+const ALL_STNS = ['中環','金鐘','尖沙咀','旺角','銅鑼灣','灣仔','油麻地','佐敦','太子','深水埗',
+  '荔枝角','美孚','黃埔','何文田','鑽石山','黃大仙','九龍塘','觀塘','調景嶺','油塘','北角',
+  '鰂魚涌','太古','柴灣','堅尼地城','香港大學','西營盤','上環','天后','炮台山','筲箕灣','杏花邨',
+  '海洋公園','黃竹坑','利東','海怡半島','欣澳','迪士尼','東涌','機場','博覽館',
+  '沙田','大圍','紅磡','尖東','會展','羅湖','落馬洲','上水','粉嶺','太和','大埔墟','大學','馬場','火炭',
+  '旺角東','奧運','南昌','荔景','青衣','九龍','香港','啟德','土瓜灣','宋皇臺',
+  '屯門','兆康','天水圍','朗屏','元朗','錦上路','荃灣西','荃灣','大窩口','葵興','葵芳'];
+
+const MTR_COLORS = {
+  '中環':'#007DC5','金鐘':'#007DC5','灣仔':'#007DC5','銅鑼灣':'#007DC5','北角':'#007DC5',
+  '尖沙咀':'#E60012','旺角':'#E60012','油麻地':'#E60012','佐敦':'#E60012','太子':'#E60012',
+  '深水埗':'#E60012','荔枝角':'#E60012','美孚':'#E60012',
+  '黃大仙':'#1AA348','鑽石山':'#1AA348','九龍塘':'#1AA348','黃埔':'#1AA348','觀塘':'#1AA348',
+  '啟德':'#923011','土瓜灣':'#923011','紅磡':'#923011','尖東':'#923011',
+  '海洋公園':'#97C459','黃竹坑':'#97C459',
+  '東涌':'#F7943D','奧運':'#F7943D','南昌':'#F7943D','荔景':'#F7943D','青衣':'#F7943D',
+  '機場':'#00888A','九龍':'#00888A','香港':'#00888A','博覽館':'#00888A',
+  '迪士尼':'#E85797',
+  '沙田':'#53B7E8','大圍':'#53B7E8','大埔墟':'#53B7E8','上水':'#53B7E8','羅湖':'#53B7E8',
+};
+
+let _mtrPickTarget = null;
+
+function pickMtrStation(btn) {
+  _mtrPickTarget = btn;
+  let picker = document.getElementById('mtr-picker');
+  if (!picker) {
+    picker = document.createElement('div');
+    picker.id = 'mtr-picker';
+    picker.style.cssText = 'position:fixed;inset:0;z-index:9100;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.55)';
+    picker.innerHTML =
+      '<div style="background:#0d1530;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:70vh;display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,0.1)">' +
+      '<div style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between">' +
+      '<div style="font-size:14px;font-weight:500;color:rgba(255,255,255,0.9)">🚇 選擇港鐵站</div>' +
+      '<button onclick="document.getElementById(\'mtr-picker\').style.display=\'none\'" style="background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.5);font-size:18px;width:30px;height:30px;border-radius:50%;cursor:pointer">×</button>' +
+      '</div>' +
+      '<div id="mtr-picker-list" style="overflow-y:auto;padding:8px 12px 24px;display:flex;flex-wrap:wrap;gap:8px">' +
+      '<button id="mtr-none-btn" style="padding:6px 16px;border-radius:999px;border:1px solid rgba(255,80,80,0.3);background:rgba(255,80,80,0.06);color:rgba(255,120,120,0.9);font-size:13px;cursor:pointer;font-family:Noto Sans TC,sans-serif">✕ 不選擇</button>' +
+      '</div>' +
+      '</div>';
+    picker.addEventListener('click', e => { if (e.target === picker) picker.style.display = 'none'; });
+    document.body.appendChild(picker);
+
+    // 不選擇 button — clears any existing tag and restores add button
+    document.getElementById('mtr-none-btn').onclick = () => {
+      if (_mtrPickTarget) {
+        const isTag = _mtrPickTarget.classList.contains('timeline-mtr-tag');
+        const row = isTag
+          ? _mtrPickTarget.closest('.timeline-mtr-row')
+          : _mtrPickTarget.closest('.timeline-mtr-row');
+        if (row) {
+          const tag = row.querySelector('.timeline-mtr-tag');
+          const addBtn = row.querySelector('.timeline-mtr-btn');
+          if (tag) { tag.style.cssText = 'display:none'; tag.innerHTML = ''; tag.onclick = null; }
+          if (addBtn) addBtn.style.display = '';
+        }
+      }
+      picker.style.display = 'none';
+    };
+
+    const list = document.getElementById('mtr-picker-list');
+    ALL_STNS.forEach(name => {
+      const color = MTR_COLORS[name] || '#1a2548';
+      const btn2 = document.createElement('button');
+      btn2.style.cssText = 'padding:6px 14px;border-radius:999px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.85);font-size:13px;cursor:pointer;font-family:Noto Sans TC,sans-serif;transition:background .15s';
+      btn2.textContent = name;
+      btn2.onmouseenter = () => { btn2.style.background = color + '33'; btn2.style.borderColor = color; };
+      btn2.onmouseleave = () => { btn2.style.background = 'rgba(255,255,255,0.04)'; btn2.style.borderColor = 'rgba(255,255,255,0.12)'; };
+      btn2.onclick = () => {
+        if (_mtrPickTarget) {
+          // Target is either the original button or an existing tag
+          const isTag = _mtrPickTarget.classList.contains('timeline-mtr-tag');
+          let tag, addBtn;
+          if (isTag) {
+            tag = _mtrPickTarget;
+            addBtn = tag.closest('.timeline-mtr-row').querySelector('.timeline-mtr-btn');
+          } else {
+            const row = _mtrPickTarget.closest('.timeline-mtr-row');
+            tag = row.querySelector('.timeline-mtr-tag');
+            addBtn = _mtrPickTarget;
+          }
+          tag.style.cssText = 'display:inline-flex;align-items:center;gap:5px;background:' + color + '22;border:1px solid ' + color + '66;border-radius:999px;padding:2px 10px 2px 6px;font-size:11px;color:#fff;cursor:pointer';
+          tag.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0"></span>' + name + '<span style="opacity:0.5;margin-left:2px;font-size:10px">✎</span>';
+          tag.onclick = () => { _mtrPickTarget = tag; picker.style.display = 'flex'; };
+          if (addBtn) addBtn.style.display = 'none';
+        }
+        picker.style.display = 'none';
+      };
+      list.appendChild(btn2);
+    });
+  }
+  picker.style.display = 'flex';
+}
+
+// Add MTR row to existing timeline items on page load
+document.querySelectorAll('.timeline-item').forEach(item => {
+  const body = item.querySelector('.timeline-body');
+  if (body && !body.querySelector('.timeline-mtr-row')) {
+    const mtrRow = document.createElement('div');
+    mtrRow.className = 'timeline-mtr-row';
+    mtrRow.innerHTML = '<button class="timeline-mtr-btn" onclick="pickMtrStation(this)">🚇 加入港鐵站</button><span class="timeline-mtr-tag" style="display:none"></span>';
+    const delBtn = body.querySelector('.delete-btn');
+    if (delBtn) body.insertBefore(mtrRow, delBtn);
+    else body.appendChild(mtrRow);
+  }
+});
+
+// ── Station spots modal (global so onclick= works) ──
+(function() {
+  const modal = document.createElement('div');
+  modal.id = 'stn-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9000;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.5)';
+  modal.innerHTML =
+    '<div id="stn-sheet" style="background:#0d1530;border-radius:20px 20px 0 0;width:100%;max-width:520px;padding:0 0 40px;border-top:1px solid rgba(255,255,255,0.1);transform:translateY(100%);transition:transform .28s cubic-bezier(.32,1,.32,1);max-height:80vh;overflow-y:auto">' +
+    '<div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:12px auto 0;flex-shrink:0"></div>' +
+    '<div id="stn-sheet-content" style="padding:20px 24px 0"></div>' +
+    '</div>';
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.body.appendChild(modal);
+})();
+
+// Station notes storage
+const stnNotes = {};
+
+window.openStationModal = function(name, lineColor, spotsData) {
+  const modal = document.getElementById('stn-modal');
+  const content = document.getElementById('stn-sheet-content');
+  const sheet = document.getElementById('stn-sheet');
+  const data = spotsData || null;
+  const note = stnNotes[name] || '';
+
+  content.innerHTML =
+    // Header
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">' +
+    '<div style="font-size:28px;line-height:1">' + (data ? data.emoji : '📍') + '</div>' +
+    '<div style="flex:1">' +
+    '<div style="font-family:\'Noto Serif TC\',serif;font-size:20px;font-weight:600;color:#fff;margin-bottom:3px">' + name + '</div>' +
+    '<div style="font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.1em">附近可以逛什麼</div>' +
+    '</div>' +
+    '<button onclick="closeModal()" style="background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.5);font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer;flex-shrink:0">×</button>' +
+    '</div>' +
+
+    // Spots list
+    '<div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:12px">' +
+    (data ? data.spots.map((sp, i) =>
+      '<div style="display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+      '<div style="width:22px;height:22px;border-radius:50%;background:' + lineColor + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px">' + (i+1) + '</div>' +
+      '<div contenteditable="true" spellcheck="false" ' +
+      'style="font-size:14px;color:rgba(255,255,255,0.85);line-height:1.55;outline:none;flex:1;border-radius:6px;padding:2px 6px;margin:-2px -6px;transition:background .15s;cursor:text" ' +
+      'onfocus="this.style.background=\'rgba(255,255,255,0.07)\'" ' +
+      'onblur="this.style.background=\'transparent\';saveStnSpot(\'' + name + '\',' + i + ',this.textContent)">' + sp + '</div>' +
+      '</div>'
+    ).join('') : '<div style="color:rgba(255,255,255,0.4);font-size:13px;padding:12px 0">暫無景點資料</div>') +
+    '</div>' +
+
+    // Notes section
+    '<div style="margin-top:16px;border-top:1px solid rgba(255,255,255,0.07);padding-top:14px">' +
+    '<div style="font-size:11px;color:rgba(255,255,255,0.35);letter-spacing:0.1em;margin-bottom:8px">📝 我的備註</div>' +
+    '<textarea id="stn-note-input" placeholder="想吃什麼、想逛什麼、注意事項…" ' +
+    'style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:13px;font-family:Noto Sans TC,sans-serif;padding:11px 14px;resize:none;outline:none;line-height:1.7;min-height:90px;transition:border-color .15s" ' +
+    'onfocus="this.style.borderColor=\'rgba(245,200,66,0.4)\'" ' +
+    'onblur="this.style.borderColor=\'rgba(255,255,255,0.1)\'">' + note + '</textarea>' +
+    '<button onclick="saveStnNote(\'' + name + '\')" ' +
+    'style="margin-top:8px;width:100%;padding:10px;background:rgba(245,200,66,0.12);border:1px solid rgba(245,200,66,0.3);border-radius:8px;color:#f5c842;font-size:13px;font-family:Noto Sans TC,sans-serif;cursor:pointer;letter-spacing:0.06em;transition:background .15s" ' +
+    'onmouseover="this.style.background=\'rgba(245,200,66,0.2)\'" ' +
+    'onmouseout="this.style.background=\'rgba(245,200,66,0.12)\'">儲存備註</button>' +
+    '</div>';
+
+  modal.style.display = 'flex';
+  sheet.style.transform = 'translateY(100%)';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    sheet.style.transform = 'translateY(0)';
+  }));
+};
+
+window.saveStnSpot = function(name, idx, text) {
+  const t = text.trim();
+  if (!t) return;
+  if (STN_SPOTS[name]) STN_SPOTS[name].spots[idx] = t;
+};
+
+window.saveStnNote = function(name) {
+  const input = document.getElementById('stn-note-input');
+  if (!input) return;
+  stnNotes[name] = input.value.trim();
+  // Visual feedback
+  const btn = input.nextElementSibling;
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = '✓ 已儲存';
+    btn.style.background = 'rgba(168,232,192,0.15)';
+    btn.style.color = '#a8e8c0';
+    btn.style.borderColor = 'rgba(168,232,192,0.3)';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.background = 'rgba(245,200,66,0.12)';
+      btn.style.color = '#f5c842';
+      btn.style.borderColor = 'rgba(245,200,66,0.3)';
+    }, 1500);
+  }
+};
+
+window.closeModal = function() {
+  const sheet = document.getElementById('stn-sheet');
+  const modal = document.getElementById('stn-modal');
+  if (sheet) sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => { if (modal) modal.style.display = 'none'; }, 300);
+};
+
+// ── MTR line map ──
+      (function(){
+        const LINES = [
+          {id:'TWL',name:'荃灣線',color:'#E60012',stations:[
+            {n:'荃灣',x:[]},{n:'大窩口',x:[]},{n:'葵興',x:[]},{n:'葵芳',x:[]},
+            {n:'荔景',x:[{id:'TCL',c:'#F7943D'},{id:'AEL',c:'#00888A'}]},
+            {n:'美孚',x:[{id:'TML',c:'#923011'}]},{n:'荔枝角',x:[]},{n:'長沙灣',x:[]},
+            {n:'深水埗',x:[]},{n:'太子',x:[{id:'KTL',c:'#1AA348'}]},
+            {n:'旺角',x:[{id:'KTL',c:'#1AA348'}]},{n:'油麻地',x:[{id:'KTL',c:'#1AA348'}]},
+            {n:'佐敦',x:[]},{n:'尖沙咀',x:[{id:'EAL',c:'#53B7E8'}]},
+            {n:'金鐘',x:[{id:'ISL',c:'#007DC5'},{id:'SIL',c:'#97C459'},{id:'EAL',c:'#53B7E8'}]},
+            {n:'中環',x:[{id:'ISL',c:'#007DC5'},{id:'AEL',c:'#00888A'}]}
+          ]},
+          {id:'KTL',name:'觀塘線',color:'#1AA348',stations:[
+            {n:'調景嶺',x:[{id:'TKL',c:'#7B3F98'}]},{n:'油塘',x:[{id:'TKL',c:'#7B3F98'}]},
+            {n:'藍田',x:[]},{n:'觀塘',x:[]},{n:'牛頭角',x:[]},{n:'九龍灣',x:[]},{n:'彩虹',x:[]},
+            {n:'鑽石山',x:[{id:'TML',c:'#923011'}]},{n:'黃大仙',x:[]},{n:'樂富',x:[]},
+            {n:'九龍塘',x:[{id:'EAL',c:'#53B7E8'}]},{n:'石硤尾',x:[]},
+            {n:'太子',x:[{id:'TWL',c:'#E60012'}]},{n:'旺角',x:[{id:'TWL',c:'#E60012'}]},
+            {n:'油麻地',x:[{id:'TWL',c:'#E60012'}]},{n:'何文田',x:[{id:'TML',c:'#923011'}]},{n:'黃埔',x:[]}
+          ]},
+          {id:'ISL',name:'港島線',color:'#007DC5',stations:[
+            {n:'堅尼地城',x:[]},{n:'香港大學',x:[]},{n:'西營盤',x:[]},{n:'上環',x:[]},
+            {n:'中環',x:[{id:'TWL',c:'#E60012'},{id:'AEL',c:'#00888A'}]},
+            {n:'金鐘',x:[{id:'TWL',c:'#E60012'},{id:'SIL',c:'#97C459'},{id:'EAL',c:'#53B7E8'}]},
+            {n:'灣仔',x:[]},{n:'銅鑼灣',x:[]},{n:'天后',x:[]},{n:'炮台山',x:[]},
+            {n:'北角',x:[{id:'TKL',c:'#7B3F98'},{id:'EAL',c:'#53B7E8'}]},
+            {n:'鰂魚涌',x:[{id:'TKL',c:'#7B3F98'}]},
+            {n:'太古',x:[]},{n:'西灣河',x:[]},{n:'筲箕灣',x:[]},{n:'杏花邨',x:[]},{n:'柴灣',x:[]}
+          ]},
+          {id:'SIL',name:'南港島線',color:'#97C459',stations:[
+            {n:'金鐘',x:[{id:'TWL',c:'#E60012'},{id:'ISL',c:'#007DC5'},{id:'EAL',c:'#53B7E8'}]},
+            {n:'海洋公園',x:[]},{n:'黃竹坑',x:[]},{n:'利東',x:[]},{n:'海怡半島',x:[]}
+          ]},
+          {id:'TKL',name:'將軍澳線',color:'#7B3F98',stations:[
+            {n:'北角',x:[{id:'ISL',c:'#007DC5'},{id:'EAL',c:'#53B7E8'}]},
+            {n:'鰂魚涌',x:[{id:'ISL',c:'#007DC5'}]},{n:'油塘',x:[{id:'KTL',c:'#1AA348'}]},
+            {n:'調景嶺',x:[{id:'KTL',c:'#1AA348'}]},{n:'將軍澳',x:[]},{n:'坑口',x:[]},
+            {n:'寶琳',x:[]},{n:'康城',x:[]}
+          ]},
+          {id:'TML',name:'屯馬線',color:'#923011',stations:[
+            {n:'屯門',x:[]},{n:'兆康',x:[]},{n:'天水圍',x:[]},{n:'朗屏',x:[]},{n:'元朗',x:[]},
+            {n:'錦上路',x:[]},{n:'荃灣西',x:[]},{n:'美孚',x:[{id:'TWL',c:'#E60012'}]},
+            {n:'南昌',x:[{id:'TCL',c:'#F7943D'},{id:'AEL',c:'#00888A'}]},{n:'柯士甸',x:[]},
+            {n:'尖東',x:[{id:'EAL',c:'#53B7E8'}]},{n:'紅磡',x:[{id:'EAL',c:'#53B7E8'}]},
+            {n:'何文田',x:[{id:'KTL',c:'#1AA348'}]},{n:'土瓜灣',x:[]},{n:'宋皇臺',x:[]},
+            {n:'啟德',x:[]},{n:'鑽石山',x:[{id:'KTL',c:'#1AA348'}]},{n:'顯徑',x:[]},
+            {n:'大圍',x:[{id:'EAL',c:'#53B7E8'}]},{n:'車公廟',x:[]},{n:'沙田圍',x:[]},
+            {n:'第一城',x:[]},{n:'石門',x:[]},{n:'大水坑',x:[]},{n:'恒安',x:[]},
+            {n:'馬鞍山',x:[]},{n:'烏溪沙',x:[]}
+          ]},
+          {id:'EAL',name:'東鐵線',color:'#53B7E8',stations:[
+            {n:'落馬洲',x:[]},{n:'羅湖',x:[]},{n:'上水',x:[]},{n:'粉嶺',x:[]},
+            {n:'太和',x:[]},{n:'大埔墟',x:[]},{n:'大學',x:[]},{n:'馬場',x:[]},{n:'火炭',x:[]},
+            {n:'沙田',x:[{id:'TML',c:'#923011'}]},{n:'大圍',x:[{id:'TML',c:'#923011'}]},
+            {n:'九龍塘',x:[{id:'KTL',c:'#1AA348'}]},{n:'旺角東',x:[]},
+            {n:'紅磡',x:[{id:'TML',c:'#923011'}]},{n:'尖東',x:[{id:'TML',c:'#923011'}]},
+            {n:'會展',x:[]},
+            {n:'金鐘',x:[{id:'TWL',c:'#E60012'},{id:'ISL',c:'#007DC5'},{id:'SIL',c:'#97C459'}]},
+            {n:'北角',x:[{id:'ISL',c:'#007DC5'},{id:'TKL',c:'#7B3F98'}]}
+          ]},
+          {id:'TCL',name:'東涌線',color:'#F7943D',stations:[
+            {n:'香港',x:[{id:'AEL',c:'#00888A'}]},{n:'九龍',x:[{id:'AEL',c:'#00888A'}]},
+            {n:'奧運',x:[]},{n:'南昌',x:[{id:'TML',c:'#923011'},{id:'AEL',c:'#00888A'}]},
+            {n:'荔景',x:[{id:'TWL',c:'#E60012'},{id:'AEL',c:'#00888A'}]},
+            {n:'青衣',x:[{id:'AEL',c:'#00888A'}]},{n:'欣澳',x:[{id:'DRL',c:'#E85797'}]},{n:'東涌',x:[]}
+          ]},
+          {id:'AEL',name:'機場快線',color:'#00888A',stations:[
+            {n:'香港',x:[{id:'TCL',c:'#F7943D'}]},{n:'九龍',x:[{id:'TCL',c:'#F7943D'}]},
+            {n:'青衣',x:[{id:'TCL',c:'#F7943D'}]},{n:'機場',x:[]},{n:'博覽館',x:[]}
+          ]},
+          {id:'DRL',name:'迪士尼線',color:'#E85797',stations:[
+            {n:'欣澳',x:[{id:'TCL',c:'#F7943D'}]},{n:'迪士尼',x:[]}
+          ]}
+        ];
+
+
+        // Station spots recommendations
+        window.STN_SPOTS = {
+          '中環':   {emoji:'🏙', spots:['天星碼頭 — 搭渡輪去尖沙咀','蘭桂坊 — 夜生活首選','中環街市 — 打卡文青商場','PMQ元創坊 — 本地設計品牌','IFC商場 — 頂層觀景台']},
+          '金鐘':   {emoji:'🌿', spots:['太古廣場購物','香港公園 — 免費賞鳥','香港視覺藝術中心','紅棉路花卉展覽場']},
+          '尖沙咀': {emoji:'🌊', spots:['星光大道 — 維港夜景必打卡','香港文化中心','香港歷史博物館','廣東道名品街','1881 Heritage — 前水警總部']},
+          '旺角':   {emoji:'🛍', spots:['女人街（通菜街）','波鞋街 — 球鞋天堂','花墟道 — 花市','朗豪坊','金魚街（通菜街北段）']},
+          '銅鑼灣': {emoji:'🛒', spots:['時代廣場','維多利亞公園 — 中秋燈籠','利園購物區','波斯富街霓虹燈拍照','糖街 Jardine Crescent 小攤檔']},
+          '灣仔':   {emoji:'🎭', spots:['喜帖街（利東街）','金紫荊廣場','香港藝術中心','藍屋 — 唐樓保育','春園街老牌茶餐廳']},
+          '油麻地': {emoji:'🌙', spots:['廟街夜市 — 傍晚最熱鬧','玉器市場（廣東道）','榕樹頭 — 露天表演','果欄 — 凌晨水果批發市場','油麻地戲院']},
+          '佐敦':   {emoji:'🍜', spots:['廟街入口','廣東道老牌小食','吳松街海鮮餐廳','波鞋街南段','平民美食天堂']},
+          '太子':   {emoji:'🌸', spots:['花墟 — 香港最大花市','波鞋街北段','花園街排檔','太子道西老區漫步']},
+          '深水埗': {emoji:'💻', spots:['鴨寮街 — 電子零件、二手電器','黃金商場','布料街（基隆街/汝州街）','北河街街市','雷生春 — 百年中藥老舖']},
+          '鑽石山': {emoji:'🏛', spots:['志蓮淨苑 — 唐代木建築','南蓮園池 — 免費中式庭園','鑽石山荷里活廣場']},
+          '黃大仙': {emoji:'🙏', spots:['黃大仙祠 — 求籤問卜','嗇色園啬色園彩殿','竹園邨壁畫','牛池灣文化節']},
+          '觀塘':   {emoji:'🎨', spots:['裕民坊 2.0 重建區','APM商場','觀塘海濱花園','本地創作人聚集地']},
+          '北角':   {emoji:'🐟', spots:['春秧街 — 電車穿越街市拍照','北角碼頭渡輪','城市花園商場','炮台山道咖啡文青區']},
+          '鰂魚涌': {emoji:'🌳', spots:['太古城商場','科士街公園','海濱長廊單車','東區走廊景觀']},
+          '太古':   {emoji:'🛶', spots:['太古城中心','柏架山自然生態','鯉魚門 — 海鮮村（的士/巴士）']},
+          '堅尼地城':{emoji:'☕', spots:['西環泳棚 — 打卡勝地','吉席街咖啡店','域多利道燒烤場','堅尼地城海旁']},
+          '上環':   {emoji:'🏮', spots:['荷李活道古玩街','文武廟','蘇豪區（Soho）','西港城 — 舊郵政局','摩羅上街 — 跳蚤市場']},
+          '灣仔':   {emoji:'🎭', spots:['喜帖街','金紫荊廣場','香港藝術中心']},
+          '海洋公園':{emoji:'🦈', spots:['香港海洋公園 — 全日玩','海洋列車纜車','水上樂園（夏季限定）']},
+          '黃竹坑': {emoji:'🎨', spots:['黃竹坑藝術空間聚集地','Para/Site 藝術空間','前南朗山道工業大廈藝廊']},
+          '迪士尼': {emoji:'🎡', spots:['香港迪士尼樂園','美國小鎮大街','幻想世界','明日世界','反斗奇兵大本營']},
+          '東涌':   {emoji:'🚡', spots:['昂坪360纜車','昂坪市集','天壇大佛（昂坪）','東薈城名店倉 outlet','大澳漁村（巴士）']},
+          '沙田':   {emoji:'🏇', spots:['沙田馬場 — 賽馬日必去','新城市廣場','城門河畔單車','香港文化博物館']},
+          '紅磡':   {emoji:'🎵', spots:['香港體育館（紅館）','紅磡碼頭','黃埔花園商場','喜氣洋洋街頭小食']},
+          '尖東':   {emoji:'🎭', spots:['香港文化中心','香港博物館群','維港海濱長廊','星光大道']},
+          '九龍':   {emoji:'🏙', spots:['圓方商場 — Elements','西九龍站高鐵','ICC摩天展望台 100','環球貿易廣場']},
+          '香港':   {emoji:'🏦', spots:['IFC商場 — 蘋果店、頂樓花園','天星碼頭','香港站機場快線','中環海濱活動空間']},
+          '奧運':   {emoji:'🛍', spots:['奧海城商場','西九龍文化區（步行）','油尖旺海濱長廊']},
+          '青衣':   {emoji:'🌉', spots:['青衣城商場','青馬大橋觀景台','海旁公園','青衣自然徑']},
+          '大埔墟': {emoji:'🚂', spots:['大埔舊墟','香港鐵路博物館','大埔海濱公園','林村許願樹']},
+          '啟德':   {emoji:'✈', spots:['啟德郵輪碼頭','啟德海濱公園','舊機場跑道打卡','體育城']},
+        };
+
+        let active = 'TWL';
+
+        function render() {
+          const line = LINES.find(l => l.id === active);
+          document.getElementById('page-flights').style.setProperty('--line-color', line.color);
+          document.getElementById('mtr-code').textContent = line.id;
+          document.getElementById('mtr-code').style.background = line.color;
+          document.getElementById('mtr-lname').textContent = line.name;
+          document.getElementById('mtr-hint2').textContent = '共 ' + line.stations.length + ' 站 · 點站名看景點';
+          document.getElementById('mtr-term-a').textContent = line.stations[0].n;
+          document.getElementById('mtr-term-b').textContent = line.stations[line.stations.length - 1].n;
+
+          const cont = document.getElementById('mtr-stns');
+          cont.innerHTML = '';
+
+          line.stations.forEach((s, i) => {
+            const isX = s.x && s.x.length > 0;
+            const isFirst = i === 0, isLast = i === line.stations.length - 1;
+            const hasSpots = !!STN_SPOTS[s.n];
+
+            const row = document.createElement('div');
+            row.className = 'mtr-srow';
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', () => openStationModal(s.n, line.color, STN_SPOTS[s.n] || null));
+
+            // Track
+            const track = document.createElement('div');
+            track.className = 'mtr-track';
+            if (!isFirst) { const seg = document.createElement('div'); seg.className = 'mtr-seg'; track.appendChild(seg); }
+            const dot = document.createElement('div');
+            dot.className = 'mtr-dot' + (isX ? ' xfer' : '');
+            track.appendChild(dot);
+            if (!isLast) { const seg2 = document.createElement('div'); seg2.className = 'mtr-seg'; track.appendChild(seg2); }
+
+            // Name col
+            const nameCol = document.createElement('div');
+            nameCol.className = 'mtr-sname';
+
+            const leftGroup = document.createElement('div');
+            leftGroup.style.cssText = 'flex:1;min-width:0';
+
+            const nameText = document.createElement('div');
+            nameText.className = 'mtr-sname-text' + (isX ? ' xfer' : '');
+            nameText.textContent = s.n;
+            if (hasSpots) nameText.style.textDecoration = 'underline dotted rgba(255,255,255,0.3)';
+            leftGroup.appendChild(nameText);
+
+            if (isX) {
+              const badges = document.createElement('div');
+              badges.className = 'mtr-xbadges';
+              s.x.forEach(xl => {
+                const b = document.createElement('span');
+                b.className = 'mtr-xb';
+                b.style.background = xl.c;
+                b.textContent = xl.id;
+                badges.appendChild(b);
+              });
+              leftGroup.appendChild(badges);
+            }
+
+            nameCol.appendChild(leftGroup);
+
+            // Arrow hint for all stations
+            const hint = document.createElement('div');
+            hint.style.cssText = 'font-size:11px;color:rgba(255,255,255,0.2);flex-shrink:0;transition:color .15s';
+            hint.textContent = '›';
+            row.addEventListener('mouseenter', () => { hint.style.color = line.color; });
+            row.addEventListener('mouseleave', () => { hint.style.color = 'rgba(255,255,255,0.2)'; });
+            nameCol.appendChild(hint);
+
+            row.appendChild(track);
+            row.appendChild(nameCol);
+            cont.appendChild(row);
+          });
+
+          document.querySelector('.mtr-stns-wrap').scrollTop = 0;
+        }
+
+        // Build line picker
+        const tabsEl = document.getElementById('mtr-tabs');
+        LINES.forEach(l => {
+          const btn = document.createElement('button');
+          btn.className = 'mtr-line-btn' + (l.id === active ? ' active' : '');
+          btn.style.setProperty('--line-color', l.color);
+          const pill = document.createElement('div');
+          pill.className = 'mlb-pill';
+          pill.style.background = l.color;
+          const code = document.createElement('div');
+          code.className = 'mlb-code';
+          code.textContent = l.id;
+          btn.appendChild(pill);
+          btn.appendChild(code);
+          btn.onclick = () => {
+            active = l.id;
+            tabsEl.querySelectorAll('.mtr-line-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            render();
+          };
+          tabsEl.appendChild(btn);
+        });
+
+        render();
+      })();
+</script>
+</body>
+</html>
