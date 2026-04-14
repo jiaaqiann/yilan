@@ -2,7 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#FDF5E6">
     <title>港澳復古旅遊規劃 App</title>
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,8 +13,16 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@900&display=swap');
         
-        body {
+        /* 解決全螢幕背景問題 */
+        html, body {
             background-color: #FDF5E6; 
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
             font-family: 'Noto Sans TC', sans-serif;
             -webkit-tap-highlight-color: transparent;
             overflow-x: hidden;
@@ -38,6 +47,7 @@
         /* 頁面切換動畫 */
         .page {
             animation: fadeIn 0.4s ease-out;
+            min-height: 100vh;
         }
 
         @keyframes fadeIn {
@@ -45,169 +55,175 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .btn-green-shadow { box-shadow: 6px 6px 0px #00A373; }
-        .btn-green-shadow:active { box-shadow: 0px 0px 0px #00A373; }
+        /* 固定在底部的按鈕層級確保 */
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
     </style>
 </head>
-<body class="max-w-md mx-auto min-h-screen border-x-4 border-black relative bg-[#FDF5E6]">
+<body class="bg-[#FDF5E6]">
 
-    <!-- 1. 首頁 (Home) -->
-    <div id="home" class="page p-6 pb-40">
-        <h1 class="text-4xl font-black italic mb-10 tracking-tighter uppercase flex items-center gap-3">
-            <span class="bg-red-500 text-white px-3 py-1 rounded-2xl border-4 border-black shadow-[4px_4px_0px_#000]">HK MO</span>
-            2026 ✈️
-        </h1>
+    <!-- 主容器：手機全螢幕，電腦限寬置中 -->
+    <div class="w-full md:max-w-md md:mx-auto min-h-screen md:border-x-4 md:border-black relative bg-[#FDF5E6] shadow-2xl">
 
-        <div class="grid grid-cols-3 gap-5">
-            <!-- 行程卡片 (Hero) -->
-            <div onclick="showPage('itinerary')" class="neo-card col-span-2 bg-red-500 text-white p-6 h-56 rounded-[32px] flex flex-col justify-end relative">
-                <i data-lucide="map" class="absolute top-6 left-6 w-14 h-14 stroke-[2.5]"></i>
+        <!-- 1. 首頁 (Home) -->
+        <div id="home" class="page p-6 pb-40">
+            <h1 class="text-4xl font-black italic mb-10 tracking-tighter uppercase flex items-center gap-3">
+                <span class="bg-red-500 text-white px-3 py-1 rounded-2xl border-4 border-black shadow-[4px_4px_0px_#000]">HK MO</span>
+                2026 ✈️
+            </h1>
+
+            <div class="grid grid-cols-3 gap-5">
+                <!-- 行程卡片 (Hero) -->
+                <div onclick="showPage('itinerary')" class="neo-card col-span-2 bg-red-500 text-white p-6 h-56 rounded-[32px] flex flex-col justify-end relative">
+                    <i data-lucide="map" class="absolute top-6 left-6 w-14 h-14 stroke-[2.5]"></i>
+                    <div>
+                        <span class="text-3xl font-black block leading-none">行程表</span>
+                        <span class="text-sm font-bold opacity-80 italic uppercase tracking-widest">Timeline</span>
+                    </div>
+                </div>
+
+                <!-- 記帳本 -->
+                <div onclick="showPage('ledger')" class="neo-card bg-[#00A373] text-white flex flex-col items-center justify-center p-4 rounded-[32px]">
+                    <i data-lucide="calculator" class="w-12 h-12 mb-2 stroke-[2.5]"></i>
+                    <span class="text-xl font-black">記帳</span>
+                </div>
+
+                <!-- 行李 -->
+                <div onclick="showPage('luggage')" class="neo-card bg-white flex flex-col items-center justify-center p-4 rounded-[32px]">
+                    <i data-lucide="luggage" class="w-10 h-10 mb-1 text-black stroke-[2.5]"></i>
+                    <span class="text-lg font-black">行李</span>
+                </div>
+
+                <!-- 伴手禮 -->
+                <div class="neo-card bg-yellow-400 flex flex-col items-center justify-center p-4 rounded-[32px]">
+                    <i data-lucide="gift" class="w-10 h-10 mb-1 text-black stroke-[2.5]"></i>
+                    <span class="text-lg font-black text-xs">伴手禮</span>
+                </div>
+
+                <!-- 設定 -->
+                <div class="neo-card bg-black text-white flex flex-col items-center justify-center p-4 rounded-[32px]">
+                    <i data-lucide="settings" class="w-10 h-10 mb-1 stroke-[2.5]"></i>
+                    <span class="text-lg font-black">設定</span>
+                </div>
+            </div>
+
+            <!-- 匯率看板 -->
+            <div class="neo-card mt-10 p-6 bg-white rounded-[32px] flex items-center justify-between">
                 <div>
-                    <span class="text-3xl font-black block leading-none">行程表</span>
-                    <span class="text-sm font-bold opacity-80 italic uppercase tracking-widest">Timeline</span>
+                    <h4 class="font-black text-gray-400 text-xs uppercase">Current Rate</h4>
+                    <p class="font-black text-2xl italic">1 HKD = 4.15 TWD</p>
                 </div>
-            </div>
-
-            <!-- 記帳本 -->
-            <div onclick="showPage('ledger')" class="neo-card bg-[#00A373] text-white flex flex-col items-center justify-center p-4 rounded-[32px]">
-                <i data-lucide="calculator" class="w-12 h-12 mb-2 stroke-[2.5]"></i>
-                <span class="text-xl font-black">記帳</span>
-            </div>
-
-            <!-- 行李 -->
-            <div onclick="showPage('luggage')" class="neo-card bg-white flex flex-col items-center justify-center p-4 rounded-[32px]">
-                <i data-lucide="luggage" class="w-10 h-10 mb-1 text-black stroke-[2.5]"></i>
-                <span class="text-lg font-black">行李</span>
-            </div>
-
-            <!-- 伴手禮 -->
-            <div class="neo-card bg-yellow-400 flex flex-col items-center justify-center p-4 rounded-[32px]">
-                <i data-lucide="gift" class="w-10 h-10 mb-1 text-black stroke-[2.5]"></i>
-                <span class="text-lg font-black text-xs">伴手禮</span>
-            </div>
-
-            <!-- 設定 -->
-            <div class="neo-card bg-black text-white flex flex-col items-center justify-center p-4 rounded-[32px]">
-                <i data-lucide="settings" class="w-10 h-10 mb-1 stroke-[2.5]"></i>
-                <span class="text-lg font-black">設定</span>
+                <div class="w-16 h-16 bg-yellow-400 rounded-full border-4 border-black flex items-center justify-center shadow-[4px_4px_0px_#000]">
+                    <i data-lucide="banknote" class="w-8 h-8 text-black stroke-[2.5]"></i>
+                </div>
             </div>
         </div>
 
-        <!-- 匯率看板 -->
-        <div class="neo-card mt-10 p-6 bg-white rounded-[32px] flex items-center justify-between">
-            <div>
-                <h4 class="font-black text-gray-400 text-xs uppercase">Current Rate</h4>
-                <p class="font-black text-2xl italic">1 HKD = 4.15 TWD</p>
+        <!-- 2. 行程頁面 (Itinerary) -->
+        <div id="itinerary" class="page hidden p-6 pb-40">
+            <button onclick="showPage('home')" class="mb-8 flex items-center font-black text-xl italic group">
+                <i data-lucide="arrow-left" class="mr-2 group-active:-translate-x-2 transition-transform"></i> 返回首頁
+            </button>
+            
+            <div class="flex overflow-x-auto gap-4 pb-8 no-scrollbar">
+                <div class="flex-shrink-0 px-10 py-4 border-4 border-black rounded-full font-black text-xl bg-red-500 text-white shadow-[4px_4px_0px_#000]">DAY 1</div>
+                <div class="flex-shrink-0 px-10 py-4 border-4 border-black rounded-full font-black text-xl bg-white shadow-[4px_4px_0px_#000]">DAY 2</div>
+                <div class="flex-shrink-0 px-10 py-4 border-4 border-black rounded-full font-black text-xl bg-white shadow-[4px_4px_0px_#000]">DAY 3</div>
             </div>
-            <div class="w-16 h-16 bg-yellow-400 rounded-full border-4 border-black flex items-center justify-center shadow-[4px_4px_0px_#000]">
-                <i data-lucide="banknote" class="w-8 h-8 text-black stroke-[2.5]"></i>
-            </div>
-        </div>
-    </div>
 
-    <!-- 2. 行程頁面 (Itinerary) -->
-    <div id="itinerary" class="page hidden p-6 pb-40">
-        <button onclick="showPage('home')" class="mb-8 flex items-center font-black text-xl italic group">
-            <i data-lucide="arrow-left" class="mr-2 group-active:-translate-x-2 transition-transform"></i> 返回首頁
-        </button>
-        
-        <div class="flex overflow-x-auto gap-4 pb-8 no-scrollbar">
-            <div class="flex-shrink-0 px-10 py-4 border-4 border-black rounded-full font-black text-xl bg-red-500 text-white shadow-[4px_4px_0px_#000]">DAY 1</div>
-            <div class="flex-shrink-0 px-10 py-4 border-4 border-black rounded-full font-black text-xl bg-white shadow-[4px_4px_0px_#000]">DAY 2</div>
-            <div class="flex-shrink-0 px-10 py-4 border-4 border-black rounded-full font-black text-xl bg-white shadow-[4px_4px_0px_#000]">DAY 3</div>
-        </div>
-
-        <h2 class="text-3xl font-black mb-10 italic flex items-center gap-3 underline decoration-red-500 decoration-8">
-            <i data-lucide="milestone" class="text-red-500 w-10 h-10"></i> 時間軸
-        </h2>
-        
-        <div class="border-l-8 border-black ml-5 pl-12 space-y-12 relative">
-            <div class="neo-card bg-white p-6 rounded-[28px] relative">
-                <div class="absolute -left-[60px] top-8 w-10 h-10 bg-white border-4 border-black rounded-full shadow-[3px_3px_0px_#000] flex items-center justify-center">
-                    <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+            <h2 class="text-3xl font-black mb-10 italic flex items-center gap-3 underline decoration-red-500 decoration-8">
+                <i data-lucide="milestone" class="text-red-500 w-10 h-10"></i> 時間軸
+            </h2>
+            
+            <div class="border-l-8 border-black ml-5 pl-12 space-y-12 relative text-black">
+                <div class="neo-card bg-white p-6 rounded-[28px] relative">
+                    <div class="absolute -left-[60px] top-8 w-10 h-10 bg-white border-4 border-black rounded-full shadow-[3px_3px_0px_#000] flex items-center justify-center">
+                        <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <span class="bg-black text-white px-4 py-1 rounded-xl font-black text-sm mb-3 inline-block uppercase">10:00 AM</span>
+                    <h3 class="text-2xl font-black">抵達香港機場</h3>
+                    <p class="text-gray-500 font-bold mt-2">辦理入境手續與領取預訂物品</p>
                 </div>
-                <span class="bg-black text-white px-4 py-1 rounded-xl font-black text-sm mb-3 inline-block">10:00 AM</span>
-                <h3 class="text-2xl font-black">抵達香港機場</h3>
-                <p class="text-gray-500 font-bold mt-2">搭乘機場快線前往市區酒店</p>
-            </div>
-            <div class="neo-card bg-white p-6 rounded-[28px] relative">
-                <div class="absolute -left-[60px] top-8 w-10 h-10 bg-white border-4 border-black rounded-full shadow-[3px_3px_0px_#000] flex items-center justify-center">
-                    <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                </div>
-                <span class="bg-black text-white px-4 py-1 rounded-xl font-black text-sm mb-3 inline-block">12:30 PM</span>
-                <h3 class="text-2xl font-black">添好運飲茶</h3>
-                <p class="text-gray-500 font-bold mt-2">必吃酥皮焗叉燒包</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. 記帳頁面 (Ledger) -->
-    <div id="ledger" class="page hidden p-6 pb-40">
-        <button onclick="showPage('home')" class="mb-8 flex items-center font-black text-xl italic group">
-            <i data-lucide="arrow-left" class="mr-2 group-active:-translate-x-2 transition-transform"></i> 返回
-        </button>
-
-        <div class="bg-yellow-400 border-4 border-black rounded-[40px] p-10 shadow-[12px_12px_0px_#000] mb-12">
-            <div class="flex justify-between items-center mb-8">
-                <h3 class="font-black text-2xl italic underline uppercase">即時記帳</h3>
-                <div class="flex bg-black p-1.5 rounded-2xl">
-                    <button id="btn-hkd" onclick="toggleCurrency('HKD')" class="curr-btn px-5 py-2 rounded-xl font-black text-sm bg-white text-black transition-all">HKD</button>
-                    <button id="btn-mop" onclick="toggleCurrency('MOP')" class="curr-btn px-5 py-2 rounded-xl font-black text-sm text-white transition-all">MOP</button>
+                <div class="neo-card bg-white p-6 rounded-[28px] relative">
+                    <div class="absolute -left-[60px] top-8 w-10 h-10 bg-white border-4 border-black rounded-full shadow-[3px_3px_0px_#000] flex items-center justify-center">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                    </div>
+                    <span class="bg-black text-white px-4 py-1 rounded-xl font-black text-sm mb-3 inline-block uppercase">12:30 PM</span>
+                    <h3 class="text-2xl font-black">添好運飲茶</h3>
+                    <p class="text-gray-500 font-bold mt-2">必吃酥皮焗叉燒包</p>
                 </div>
             </div>
+        </div>
 
-            <div class="relative mb-8">
-                <span class="absolute left-5 top-1/2 -translate-y-1/2 font-black text-3xl text-black">
-                    <i data-lucide="dollar-sign" class="w-10 h-10 stroke-[4]"></i>
-                </span>
-                <input id="calc-input" type="number" placeholder="0.00" oninput="updateRate()" class="w-full border-4 border-black rounded-3xl p-6 pl-16 text-4xl font-black outline-none bg-white">
+        <!-- 3. 記帳頁面 (Ledger) -->
+        <div id="ledger" class="page hidden p-6 pb-40">
+            <button onclick="showPage('home')" class="mb-8 flex items-center font-black text-xl italic group">
+                <i data-lucide="arrow-left" class="mr-2 group-active:-translate-x-2 transition-transform"></i> 返回
+            </button>
+
+            <div class="bg-yellow-400 border-4 border-black rounded-[40px] p-10 shadow-[12px_12px_0px_#000] mb-12">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="font-black text-2xl italic underline uppercase">即時記帳</h3>
+                    <div class="flex bg-black p-1.5 rounded-2xl">
+                        <button id="btn-hkd" onclick="toggleCurrency('HKD')" class="curr-btn px-5 py-2 rounded-xl font-black text-sm bg-white text-black transition-all">HKD</button>
+                        <button id="btn-mop" onclick="toggleCurrency('MOP')" class="curr-btn px-5 py-2 rounded-xl font-black text-sm text-white transition-all">MOP</button>
+                    </div>
+                </div>
+
+                <div class="relative mb-8">
+                    <span class="absolute left-5 top-1/2 -translate-y-1/2 font-black text-3xl text-black">
+                        <i data-lucide="dollar-sign" class="w-10 h-10 stroke-[4]"></i>
+                    </span>
+                    <input id="calc-input" type="number" placeholder="0.00" oninput="updateRate()" class="w-full border-4 border-black rounded-3xl p-6 pl-16 text-4xl font-black outline-none bg-white text-black">
+                </div>
+
+                <div class="flex justify-between items-center px-2 mb-8">
+                    <span class="font-black text-gray-800 italic text-lg">換算台幣約</span>
+                    <span id="calc-result" class="text-5xl font-black italic text-black">NT$ 0</span>
+                </div>
+
+                <button onclick="saveExpense()" class="w-full bg-black text-white p-6 rounded-[32px] font-black text-2xl shadow-[8px_8px_0px_#00A373] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3">
+                    <i data-lucide="cloud-upload" class="w-8 h-8"></i> 存入雲端
+                </button>
             </div>
 
-            <div class="flex justify-between items-center px-2 mb-8">
-                <span class="font-black text-gray-800 italic text-lg">換算台幣約</span>
-                <span id="calc-result" class="text-5xl font-black italic">NT$ 0</span>
+            <h3 class="text-2xl font-black mb-8 italic border-b-8 border-black inline-block uppercase text-black">近期開支</h3>
+            <div id="expense-list" class="space-y-5">
+                <p class="text-gray-400 italic font-bold">目前無紀錄，請先輸入金額...</p>
             </div>
+        </div>
 
-            <button onclick="saveExpense()" class="w-full bg-black text-white p-6 rounded-[32px] font-black text-2xl shadow-[8px_8px_0px_#00A373] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3">
-                <i data-lucide="cloud-upload" class="w-8 h-8"></i> 存入雲端
+        <!-- 4. 行李頁面 (Luggage) -->
+        <div id="luggage" class="page hidden p-6 pb-40">
+            <button onclick="showPage('home')" class="mb-8 flex items-center font-black text-xl italic group">
+                <i data-lucide="arrow-left" class="mr-2 group-active:-translate-x-2 transition-transform"></i> 返回
+            </button>
+            <h2 class="text-3xl font-black mb-10 italic uppercase underline decoration-yellow-400 decoration-8 text-black">行李檢核</h2>
+            <div class="space-y-4" id="luggage-list">
+                <div onclick="this.classList.toggle('opacity-50')" class="neo-card bg-white p-6 rounded-[24px] flex justify-between items-center text-black">
+                    <span class="text-xl font-black">護照與簽證</span>
+                    <i data-lucide="check-square" class="text-red-500"></i>
+                </div>
+                <div onclick="this.classList.toggle('opacity-50')" class="neo-card bg-white p-6 rounded-[24px] flex justify-between items-center text-black">
+                    <span class="text-xl font-black">八達通卡</span>
+                    <i data-lucide="check-square" class="text-red-500"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 全域懸浮按鈕 (計算機) -->
+        <div onclick="showPage('ledger')" class="fixed bottom-36 right-8 md:right-[calc(50%-180px)] w-20 h-20 bg-[#00A373] border-4 border-black rounded-[28px] shadow-[8px_8px_0px_#000] flex items-center justify-center cursor-pointer active:scale-90 z-40 transition-transform">
+            <i data-lucide="calculator" class="text-white w-10 h-10 stroke-[3]"></i>
+        </div>
+
+        <!-- 底部新增按鈕 -->
+        <div class="fixed bottom-0 left-0 right-0 p-10 flex justify-center z-30 pointer-events-none safe-bottom">
+            <button onclick="alert('新增功能：行程/支出')" class="w-full max-w-sm bg-black text-white border-4 border-black rounded-[32px] px-10 py-6 font-black shadow-[8px_8px_0px_#00A373] active:translate-y-2 active:shadow-none transition-all pointer-events-auto text-2xl flex items-center justify-center gap-3">
+                <i data-lucide="plus" class="stroke-[4] w-8 h-8"></i> 新增紀錄
             </button>
         </div>
 
-        <h3 class="text-2xl font-black mb-8 italic border-b-8 border-black inline-block uppercase">近期開支</h3>
-        <div id="expense-list" class="space-y-5">
-            <p class="text-gray-400 italic font-bold">目前無紀錄，請先輸入金額...</p>
-        </div>
-    </div>
-
-    <!-- 4. 行李頁面 (Luggage) -->
-    <div id="luggage" class="page hidden p-6 pb-40">
-        <button onclick="showPage('home')" class="mb-8 flex items-center font-black text-xl italic group">
-            <i data-lucide="arrow-left" class="mr-2 group-active:-translate-x-2 transition-transform"></i> 返回
-        </button>
-        <h2 class="text-3xl font-black mb-10 italic uppercase underline decoration-yellow-400 decoration-8">行李檢核</h2>
-        <div class="space-y-4" id="luggage-list">
-            <!-- 預設項目 -->
-            <div onclick="this.classList.toggle('opacity-50')" class="neo-card bg-white p-6 rounded-[24px] flex justify-between items-center">
-                <span class="text-xl font-black">護照與簽證</span>
-                <i data-lucide="check-square" class="text-red-500"></i>
-            </div>
-            <div onclick="this.classList.toggle('opacity-50')" class="neo-card bg-white p-6 rounded-[24px] flex justify-between items-center">
-                <span class="text-xl font-black">八達通卡</span>
-                <i data-lucide="check-square" class="text-red-500"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- 全域懸浮按鈕 (計算機) -->
-    <div onclick="showPage('ledger')" class="fixed bottom-36 right-8 w-20 h-20 bg-[#00A373] border-4 border-black rounded-[28px] shadow-[8px_8px_0px_#000] flex items-center justify-center cursor-pointer active:scale-90 z-40 transition-transform">
-        <i data-lucide="calculator" class="text-white w-10 h-10 stroke-[3]"></i>
-    </div>
-
-    <!-- 底部新增按鈕 -->
-    <div class="fixed bottom-0 left-0 right-0 p-10 flex justify-center z-30 pointer-events-none">
-        <button onclick="alert('新增功能：行程/支出')" class="w-full max-w-sm bg-black text-white border-4 border-black rounded-[32px] px-10 py-6 font-black shadow-[8px_8px_0px_#00A373] active:translate-y-2 active:shadow-none transition-all pointer-events-auto text-2xl flex items-center justify-center gap-3">
-            <i data-lucide="plus" class="stroke-[4] w-8 h-8"></i> 新增紀錄
-        </button>
     </div>
 
     <!-- 控制邏輯 -->
@@ -216,7 +232,6 @@
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // Firebase 配置 (如果為空則自動進入模擬模式)
         const firebaseConfig = { apiKey: "", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
         const isFirebaseValid = firebaseConfig.apiKey !== "";
 
@@ -230,11 +245,11 @@
 
         const state = { currency: 'HKD', rate: 4.15 };
 
-        // 全域函數綁定
         window.showPage = (pageId) => {
             document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
             document.getElementById(pageId).classList.remove('hidden');
             lucide.createIcons();
+            window.scrollTo(0, 0);
         };
 
         window.updateRate = () => {
@@ -259,11 +274,12 @@
                     amount: amt, currency: state.currency, twd: Math.round(amt * state.rate), timestamp: serverTimestamp()
                 });
             } else {
-                // 模擬模式：直接加到列表
                 const item = document.createElement('div');
-                item.className = "bg-white border-4 border-black rounded-2xl p-4 shadow-[4px_4px_0px_#000] flex justify-between items-center mb-4";
+                item.className = "bg-white border-4 border-black rounded-2xl p-4 shadow-[4px_4px_0px_#000] flex justify-between items-center mb-4 text-black";
                 item.innerHTML = `<div><span class="font-black text-lg">${state.currency} ${amt}</span><p class="text-[10px] text-gray-400 font-bold uppercase">模擬儲存</p></div><div class="text-2xl font-black text-[#00A373] italic">NT$ ${Math.round(amt * state.rate)}</div>`;
-                document.getElementById('expense-list').prepend(item);
+                const list = document.getElementById('expense-list');
+                if (list.querySelector('p')) list.innerHTML = '';
+                list.prepend(item);
             }
             document.getElementById('calc-input').value = '';
             alert('儲存成功！');
@@ -276,14 +292,13 @@
                 snap.docs.forEach(d => {
                     const data = d.data();
                     const item = document.createElement('div');
-                    item.className = "bg-white border-4 border-black rounded-2xl p-4 shadow-[4px_4px_0px_#000] flex justify-between items-center mb-4";
+                    item.className = "bg-white border-4 border-black rounded-2xl p-4 shadow-[4px_4px_0px_#000] flex justify-between items-center mb-4 text-black";
                     item.innerHTML = `<div><span class="font-black text-lg">${data.currency} ${data.amount}</span><p class="text-[10px] text-gray-400 font-bold uppercase">已同步</p></div><div class="text-2xl font-black text-[#00A373] italic">NT$ ${data.twd}</div>`;
                     list.appendChild(item);
                 });
             });
         }
 
-        // 頁面加載後初始化圖示
         window.addEventListener('load', () => lucide.createIcons());
     </script>
 </body>
