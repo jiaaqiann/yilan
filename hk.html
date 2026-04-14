@@ -4,20 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        :root { --bg: #F4F1EA; --shadow: 8px 8px 0px #000; }
-        body { background: var(--bg); font-family: sans-serif; padding: 20px; font-weight: 900; }
-        .page { display: none; } /* 預設所有頁面隱藏 */
-        .active { display: block; } /* 只有 active 的頁面顯示 */
-        
-        /* 你的硬陰影卡片樣式 */
-        .card { border: 4px solid #000; background: #fff; padding: 15px; box-shadow: var(--shadow); cursor: pointer; transition: 0.1s; }
-        .card:active { transform: translate(4px, 4px); box-shadow: 4px 4px 0px #000; }
-        
-        .magazine-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .hero { grid-column: span 2; background: #FF3131; color: #fff; font-size: 1.5rem; height: 100px; display: flex; align-items: center; justify-content: center; }
-        
-        /* 底部按鈕 */
-        .bottom-btn { position: fixed; bottom: 20px; left: 10%; width: 80%; background: #000; color: #fff; padding: 15px; border: none; font-size: 1.2rem; box-shadow: 5px 5px 0px #00A373; font-weight: bold; }
+       /* 修改 .card 樣式，讓所有卡片和按鈕都變圓弧 */
+.card {
+    /* 1. 核心屬性：設定圓角半徑，數值越大越圓 */
+    border-radius: 12px; /* 你可以試著改成 8px 或 20px 看看不同效果 */
+    
+    /* 以下是你原本有的樣式，我稍微整理了一下 */
+    border: 4px solid blue;
+    background: #fff;
+    padding: 1rem;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: 0.1s;
+    user-select: none; /* 防止文字被選取，像個按鈕 */
+}
+
+/* 為了讓按鈕點擊時看起來更真實，也稍微調整一下它的圓角效果 */
+.card.active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 2px #333;
+}
     </style>
 </head>
 <body>
