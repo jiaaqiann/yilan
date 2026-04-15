@@ -1,54 +1,37 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Plus, 
-  Calendar, 
-  Wallet, 
-  Briefcase, 
-  CheckSquare, 
-  Calculator, 
-  X, 
-  Home,
-  Trash2,
-  Settings,
-  Share2,
-  Bell,
-  WifiOff
+  Plus, Calendar, Wallet, Briefcase, CheckSquare, 
+  Calculator, X, Home, Trash2, Settings, 
+  WifiOff, Bell, ChevronRight, Camera
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  onSnapshot, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc,
-  query,
-  orderBy
+  getFirestore, collection, doc, onSnapshot, 
+  addDoc, updateDoc, deleteDoc, query 
 } from 'firebase/firestore';
 import { 
-  getAuth, 
-  signInAnonymously, 
-  signInWithCustomToken, 
-  onAuthStateChanged 
+  getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged 
 } from 'firebase/auth';
 
-// --- Firebase 配置 ---
-const firebaseConfig = JSON.parse(__firebase_config);
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'hk-mo-travel-pwa';
+/**
+ * --- 樣式常量 (Neo-Brutalism Style) ---
+ */
+const COLORS = {
+  HK_RED: '#CF1126',
+  MO_GREEN: '#00785E',
+  ACCENT_YELLOW: '#FFDE03',
+  BG_CREAM: '#FDF6E3',
+  BLACK: '#000000',
+  WHITE: '#FFFFFF'
+};
 
-// --- 視覺規範 (Neo-Brutalism Style) ---
-const HK_RED = '#CF1126';
-const MO_GREEN = '#00785E';
-const BG_CREAM = '#FDF6E3';
-const ACCENT_YELLOW = '#FFDE03';
-const HARD_SHADOW = '6px 6px 0px 0px #000000';
-const HARD_SHADOW_SMALL = '3px 3px 0px 0px #000000';
+const SHADOWS = {
+  HARD: '6px 6px 0px 0px #000000',
+  HARD_SM: '3px 3px 0px 0px #000000',
+  ACTIVE: '2px 2px 0px 0px #000000'
+};
 
-const EXCHANGE_RATE = 4.15; // 港幣/澳幣對台幣
+const EXCHANGE_RATE = 4.15; // 港幣/澳幣對台幣概估
 
 const PET_PHOTOS = [
   "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=400",
@@ -56,7 +39,16 @@ const PET_PHOTOS = [
   "https://images.unsplash.com/photo-1533738363-b7f9aef128ce?auto=format&fit=crop&q=80&w=400"
 ];
 
-const App = () => {
+/**
+ * --- Firebase 初始化 ---
+ */
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'travel-hk-mo-pwa';
+
+export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('home');
   const [isCalcOpen, setIsCalcOpen] = useState(false);
@@ -64,7 +56,6 @@ const App = () => {
   const [petIndex, setPetIndex] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   // 資料狀態
   const [itinerary, setItinerary] = useState([]);
@@ -72,83 +63,81 @@ const App = () => {
   const [luggage, setLuggage] = useState([]);
   const [todos, setTodos] = useState([]);
 
-  // PWA & Meta Tag 注入
+  /**
+   * 1. PWA & Auth 初始化
+   */
   useEffect(() => {
-    const metaTags = [
+    // 注入 PWA Meta Tags
+    const metaData = [
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover' },
-      { name: 'theme-color', content: HK_RED }
+      { name: 'theme-color', content: COLORS.HK_RED }
     ];
-
-    metaTags.forEach(tag => {
-      let element = document.querySelector(`meta[name="${tag.name}"]`);
-      if (!element) {
-        element = document.createElement('meta');
-        element.setAttribute('name', tag.name);
-        document.head.appendChild(element);
+    metaData.forEach(m => {
+      let tag = document.querySelector(`meta[name="${m.name}"]`);
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('name', m.name);
+        document.head.appendChild(tag);
       }
-      element.setAttribute('content', tag.content);
+      tag.setAttribute('content', m.content);
     });
 
-    document.title = "HK/MO 旅遊助手";
-
-    // 網路狀態監聽
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // 模擬啟動載入
-    const timer = setTimeout(() => setIsLoading(false), 2000);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      clearTimeout(timer);
-    };
-  }, []);
-
-  // Firebase 認證與同步 (依照 Rule 3)
-  useEffect(() => {
+    // Firebase Auth
     const initAuth = async () => {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      } else {
-        await signInAnonymously(auth);
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.error("Auth Error", err);
       }
     };
     initAuth();
     const unsubscribeAuth = onAuthStateChanged(auth, setUser);
-    return () => unsubscribeAuth();
+    
+    // 模擬載入動畫
+    const timer = setTimeout(() => setIsLoading(false), 1500);
+    
+    return () => {
+      unsubscribeAuth();
+      clearTimeout(timer);
+    };
   }, []);
 
+  /**
+   * 2. Firebase 資料即時同步 (Rule 1 & 2)
+   */
   useEffect(() => {
     if (!user) return;
 
-    // 即時監聽 (依照 Rule 1 & 2)
-    const unsubItinerary = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'itinerary'), 
-      (snapshot) => setItinerary(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))),
-      (err) => console.error(err)
-    );
-    const unsubExpenses = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'), 
-      (snapshot) => setExpenses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))),
-      (err) => console.error(err)
-    );
-    const unsubLuggage = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'luggage'), 
-      (snapshot) => setLuggage(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))),
-      (err) => console.error(err)
-    );
-    const unsubTodos = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'todos'), 
-      (snapshot) => setTodos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))),
-      (err) => console.error(err)
-    );
-
-    return () => {
-      unsubItinerary(); unsubExpenses(); unsubLuggage(); unsubTodos();
+    const collections = ['itinerary', 'expenses', 'luggage', 'todos'];
+    const setters = {
+      itinerary: setItinerary,
+      expenses: setExpenses,
+      luggage: setLuggage,
+      todos: setTodos
     };
+
+    const unsubscribes = collections.map(colName => {
+      const q = collection(db, 'artifacts', appId, 'public', 'data', colName);
+      return onSnapshot(q, 
+        (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setters[colName](data);
+        },
+        (error) => console.error(`Error syncing ${colName}:`, error)
+      );
+    });
+
+    return () => unsubscribes.forEach(unsub => unsub());
   }, [user]);
 
-  // 寵物相簿輪播
+  /**
+   * 3. 寵物照片輪播
+   */
   useEffect(() => {
     const interval = setInterval(() => {
       setPetIndex(prev => (prev + 1) % PET_PHOTOS.length);
@@ -156,301 +145,308 @@ const App = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // 資料操作
-  const handleAddItem = async (data) => {
+  /**
+   * 4. 資料操作方法
+   */
+  const handleAddItem = async (formData) => {
     if (!user) return;
-    const collectionName = activeTab === 'itinerary' ? 'itinerary' : 
-                         activeTab === 'expenses' ? 'expenses' :
-                         activeTab === 'luggage' ? 'luggage' : 'todos';
-    
+    const colName = activeTab === 'home' ? 'itinerary' : activeTab;
     try {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', collectionName), {
-        ...data,
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', colName), {
+        ...formData,
         createdAt: Date.now(),
         createdBy: user.uid
       });
       setShowAddModal(false);
-    } catch (e) {
-      console.error("Add error:", e);
+    } catch (err) {
+      console.error("Add Error", err);
     }
   };
 
-  const toggleCheck = async (id, currentStatus, collectionName) => {
-    const docRef = doc(db, 'artifacts', appId, 'public', 'data', collectionName, id);
-    await updateDoc(docRef, { completed: !currentStatus });
+  const handleDelete = async (id, colName) => {
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', colName, id));
+    } catch (err) {
+      console.error("Delete Error", err);
+    }
   };
 
-  const deleteItem = async (id, collectionName) => {
-    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', collectionName, id));
+  const handleToggle = async (id, currentStatus, colName) => {
+    try {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', colName, id), {
+        completed: !currentStatus
+      });
+    } catch (err) {
+      console.error("Toggle Error", err);
+    }
   };
 
-  // 通用元件
-  const Card = ({ children, color = 'white', className = '', onClick }) => (
-    <div 
-      onClick={onClick}
-      className={`border-4 border-black p-4 transition-all active:scale-[0.98] cursor-pointer ${className}`}
-      style={{ backgroundColor: color, boxShadow: HARD_SHADOW }}
-    >
-      {children}
-    </div>
-  );
+  /**
+   * --- UI 元件 ---
+   */
 
-  const Button = ({ children, color = 'white', onClick, className = '' }) => (
-    <button 
-      onClick={onClick}
-      className={`border-4 border-black px-6 py-2 font-black text-xl flex items-center justify-center gap-2 active:translate-x-1 active:translate-y-1 transition-all ${className}`}
-      style={{ backgroundColor: color, boxShadow: HARD_SHADOW }}
-    >
-      {children}
-    </button>
-  );
-
-  // 載入畫面
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-[1000] p-10">
-        <div className="relative w-32 h-32 border-8 border-white animate-spin">
-          <div className="absolute inset-0 bg-red-600 animate-pulse m-2"></div>
+        <div className="w-24 h-24 border-[10px] border-white border-t-red-600 rounded-full animate-spin mb-8"></div>
+        <h1 className="text-white text-4xl font-black italic tracking-widest animate-pulse uppercase">Syncing...</h1>
+        <div className="mt-4 flex gap-2">
+          <div className="w-4 h-4 bg-red-600 animate-bounce delay-75"></div>
+          <div className="w-4 h-4 bg-white animate-bounce delay-150"></div>
+          <div className="w-4 h-4 bg-green-600 animate-bounce delay-300"></div>
         </div>
-        <h1 className="text-white text-4xl font-black italic mt-10 tracking-widest animate-bounce">LOADING...</h1>
-        <p className="text-gray-400 font-bold mt-4">正在同步雲端資料</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen font-sans bg-[#FDF6E3] text-black pb-32">
-      {/* 頂部導航列 */}
-      <header className="px-6 pt-12 pb-4 border-b-4 border-black bg-white flex justify-between items-center sticky top-0 z-50">
+    <div className="min-h-screen bg-[#FDF6E3] text-black font-sans pb-32">
+      {/* Header */}
+      <header className="px-6 pt-10 pb-4 bg-white border-b-4 border-black sticky top-0 z-50 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black italic tracking-tighter leading-none">
-            <span style={{ color: HK_RED }}>HONG KONG</span><br />
-            <span style={{ color: MO_GREEN }}>MACAU</span>
+          <h1 className="text-3xl font-black italic leading-none tracking-tighter">
+            <span style={{ color: COLORS.HK_RED }}>HK</span>
+            <span className="mx-1 text-gray-300">×</span>
+            <span style={{ color: COLORS.MO_GREEN }}>MO</span>
+            <span className="ml-2 block text-sm not-italic tracking-normal">TRAVEL PLANNER</span>
           </h1>
         </div>
         <div className="flex gap-2">
-          {!isOnline && (
-            <div className="bg-red-100 border-2 border-black p-2"><WifiOff size={20} /></div>
-          )}
-          <div className="w-10 h-10 border-4 border-black flex items-center justify-center bg-yellow-300 shadow-[2px_2px_0px_0px_#000]">
+          <div className="bg-yellow-300 border-2 border-black px-2 py-1 text-[10px] font-black shadow-[2px_2px_0px_0px_#000] rotate-2">LIVE SYNC</div>
+          <div className="w-10 h-10 border-4 border-black flex items-center justify-center bg-white shadow-sm active:translate-y-0.5">
             <Bell size={20} strokeWidth={3} />
           </div>
         </div>
       </header>
 
-      {/* 主要內容區 */}
-      <main className="max-w-xl mx-auto p-4">
+      {/* Main Content */}
+      <main className="max-w-md mx-auto p-4 space-y-4">
         {activeTab === 'home' && (
-          <div className="grid grid-cols-2 gap-4">
-            {/* 特大行程卡 */}
-            <Card 
-              color={HK_RED} 
-              className="col-span-2 h-52 flex flex-col justify-end text-white relative overflow-hidden group"
+          <div className="grid grid-cols-2 gap-4 animate-in fade-in duration-500">
+            {/* Featured Card */}
+            <div 
               onClick={() => setActiveTab('itinerary')}
+              className="col-span-2 h-48 border-4 border-black p-6 flex flex-col justify-end text-white relative overflow-hidden active:scale-95 transition-transform"
+              style={{ backgroundColor: COLORS.HK_RED, boxShadow: SHADOWS.HARD }}
             >
-              <div className="absolute top-4 right-4 bg-white text-black px-3 py-1 text-sm font-black rotate-3">ON AIR</div>
-              <div className="z-10">
-                <h2 className="text-4xl font-black">香港中環漫步</h2>
-                <p className="text-lg opacity-90 font-bold">目前進度：蓮香居飮茶中...</p>
-              </div>
-              <Calendar className="absolute -bottom-6 -right-6 w-40 h-40 opacity-20 rotate-12" />
-            </Card>
+              <div className="absolute top-4 right-4 bg-white text-black px-2 py-1 text-xs font-black -rotate-3 border-2 border-black">NOW SHOWING</div>
+              <h2 className="text-4xl font-black leading-none">香港中環<br/>在地日常</h2>
+              <p className="font-bold opacity-80 mt-2">點擊查看完整行程單 →</p>
+              <Calendar className="absolute -bottom-6 -right-6 w-32 h-32 opacity-20" />
+            </div>
 
-            {/* 六宮格其餘項目 */}
-            <Card color={MO_GREEN} className="h-44 flex flex-col justify-center items-center text-white" onClick={() => setActiveTab('expenses')}>
-              <Wallet size={48} strokeWidth={3} />
-              <span className="text-2xl mt-2 font-black">記帳本</span>
-            </Card>
+            {/* Grid Items */}
+            <MenuCard 
+              icon={<Wallet size={40} />} 
+              label="記帳本" 
+              color={COLORS.MO_GREEN} 
+              textColor="white"
+              onClick={() => setActiveTab('expenses')} 
+            />
+            <MenuCard 
+              icon={<Briefcase size={40} />} 
+              label="行李箱" 
+              color={COLORS.ACCENT_YELLOW} 
+              onClick={() => setActiveTab('luggage')} 
+            />
+            <MenuCard 
+              icon={<CheckSquare size={40} />} 
+              label="待辦事項" 
+              color="white" 
+              onClick={() => setActiveTab('todos')} 
+            />
 
-            <Card color={ACCENT_YELLOW} className="h-44 flex flex-col justify-center items-center" onClick={() => setActiveTab('luggage')}>
-              <Briefcase size={48} strokeWidth={3} />
-              <span className="text-2xl mt-2 font-black text-black">行李清單</span>
-            </Card>
-
-            <Card color="white" className="h-44 flex flex-col justify-center items-center" onClick={() => setActiveTab('todos')}>
-              <CheckSquare size={48} strokeWidth={3} />
-              <span className="text-2xl mt-2 font-black text-black">代辦事項</span>
-            </Card>
-
-            {/* 寵物相框 Web App 裝飾 */}
-            <div className="h-44 border-4 border-black p-2 relative bg-white overflow-hidden shadow-[6px_6px_0px_0px_#000] rotate-2">
-              <div className="absolute inset-0 bg-black/10 z-10 pointer-events-none mix-blend-overlay"></div>
-              <img 
-                src={PET_PHOTOS[petIndex]} 
-                alt="pet" 
-                className="w-full h-full object-cover grayscale-[20%]"
-              />
-              <div className="absolute bottom-2 left-2 bg-black text-white px-2 py-0.5 text-[10px] font-black z-20 uppercase">
-                Pet Cam - Live
+            {/* Pet Frame */}
+            <div className="h-40 border-4 border-black p-2 bg-white shadow-[6px_6px_0px_0px_#000] relative rotate-1 overflow-hidden">
+              <div className="absolute top-1 left-1 bg-black text-white px-1 text-[8px] font-black z-10">DOGGO CAM 01</div>
+              <img src={PET_PHOTOS[petIndex]} className="w-full h-full object-cover border-2 border-black" />
+              <div className="absolute bottom-1 right-1 flex gap-1">
+                {PET_PHOTOS.map((_, i) => (
+                  <div key={i} className={`w-1.5 h-1.5 border border-black ${i === petIndex ? 'bg-black' : 'bg-white'}`} />
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* 其它頁面切換 */}
-        {activeTab === 'itinerary' && <ScheduleView itinerary={itinerary} deleteItem={deleteItem} />}
-        {activeTab === 'expenses' && <ExpensesView expenses={expenses} deleteItem={deleteItem} />}
-        {(activeTab === 'luggage' || activeTab === 'todos') && (
-          <ChecklistView 
-            type={activeTab} 
-            items={activeTab === 'luggage' ? luggage : todos} 
-            toggleCheck={toggleCheck} 
-            deleteItem={deleteItem} 
-          />
-        )}
+        {/* Tab Views */}
+        {activeTab === 'itinerary' && <ItineraryView items={itinerary} onDelete={(id) => handleDelete(id, 'itinerary')} />}
+        {activeTab === 'expenses' && <ExpensesView items={expenses} onDelete={(id) => handleDelete(id, 'expenses')} />}
+        {activeTab === 'luggage' && <ListView type="luggage" items={luggage} onToggle={handleToggle} onDelete={handleDelete} />}
+        {activeTab === 'todos' && <ListView type="todos" items={todos} onToggle={handleToggle} onDelete={handleDelete} />}
       </main>
 
-      {/* App Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-8 border-black z-[100] px-6 pt-4 pb-8 flex justify-between items-center safe-area-bottom">
-        <NavButton active={activeTab === 'home'} icon={<Home />} label="首頁" onClick={() => setActiveTab('home')} />
-        <NavButton active={activeTab === 'itinerary'} icon={<Calendar />} label="行程" onClick={() => setActiveTab('itinerary')} />
-        
-        {/* 中央主按鈕 */}
-        <div className="relative -top-12">
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="w-20 h-20 bg-black text-white rounded-full flex items-center justify-center border-4 border-white shadow-2xl active:scale-90 transition-transform"
-          >
-            <Plus size={48} strokeWidth={4} />
-          </button>
-        </div>
-
-        <NavButton active={activeTab === 'expenses'} icon={<Wallet />} label="記帳" onClick={() => setActiveTab('expenses')} />
-        <NavButton active={activeTab === 'todos'} icon={<Settings />} label="設定" onClick={() => setActiveTab('todos')} />
-      </nav>
-
-      {/* 全域懸浮計算機 */}
+      {/* Floating Calculator */}
       <button 
         onClick={() => setIsCalcOpen(true)}
-        className="fixed bottom-32 right-6 w-16 h-16 bg-yellow-300 border-4 border-black rounded-full flex items-center justify-center z-[150] shadow-2xl hover:rotate-12 active:scale-95 transition-all"
+        className="fixed bottom-32 right-6 w-16 h-16 bg-yellow-300 border-4 border-black rounded-full flex items-center justify-center z-[100] shadow-[4px_4px_0px_0px_#000] active:translate-y-1 active:shadow-none transition-all"
       >
         <Calculator size={32} strokeWidth={3} />
       </button>
 
+      {/* Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-8 border-black z-[200] px-6 pt-4 pb-10 flex justify-between items-center">
+        <NavIcon active={activeTab === 'home'} icon={<Home />} label="首頁" onClick={() => setActiveTab('home')} />
+        <NavIcon active={activeTab === 'itinerary'} icon={<Calendar />} label="行程" onClick={() => setActiveTab('itinerary')} />
+        
+        {/* Central Add Button */}
+        <div className="relative -top-12">
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="w-20 h-20 bg-black text-white rounded-full border-4 border-white shadow-xl flex items-center justify-center active:scale-90 transition-transform"
+          >
+            <Plus size={44} strokeWidth={4} />
+          </button>
+        </div>
+
+        <NavIcon active={activeTab === 'expenses'} icon={<Wallet />} label="記帳" onClick={() => setActiveTab('expenses')} />
+        <NavIcon active={activeTab === 'todos'} icon={<Settings />} label="設定" onClick={() => setActiveTab('home')} />
+      </nav>
+
+      {/* Modals */}
       {isCalcOpen && <CalculatorModal onClose={() => setIsCalcOpen(false)} input={calcInput} setInput={setCalcInput} />}
       {showAddModal && <AddModal activeTab={activeTab} onClose={() => setShowAddModal(false)} onSave={handleAddItem} />}
     </div>
   );
-};
+}
 
-// --- 子元件定義 ---
+/**
+ * --- 子元件庫 ---
+ */
 
-const NavButton = ({ active, icon, label, onClick }) => (
-  <button onClick={onClick} className={`flex flex-col items-center gap-1 ${active ? 'text-black' : 'text-gray-400'}`}>
-    <div className={`transition-transform ${active ? 'scale-125' : ''}`}>
-      {React.cloneElement(icon, { size: 28, strokeWidth: active ? 3 : 2 })}
-    </div>
-    <span className={`text-[10px] font-black uppercase ${active ? 'block' : 'hidden'}`}>{label}</span>
-  </button>
-);
-
-const ScheduleView = ({ itinerary, deleteItem }) => {
-  const dates = ["05/20", "05/21", "05/22", "05/23", "05/24"];
-  const [selectedDate, setSelectedDate] = useState("05/20");
-
+function MenuCard({ icon, label, color, textColor = 'black', onClick }) {
   return (
-    <div className="animate-in slide-in-from-bottom-4 duration-300">
-      <div className="flex overflow-x-auto gap-3 pb-6 no-scrollbar">
-        {dates.map(date => (
-          <button
-            key={date}
-            onClick={() => setSelectedDate(date)}
-            className={`flex-shrink-0 border-4 border-black px-6 py-2 font-black text-xl ${selectedDate === date ? 'bg-yellow-300 -translate-y-1' : 'bg-white'}`}
-            style={{ boxShadow: selectedDate === date ? HARD_SHADOW_SMALL : 'none' }}
+    <div 
+      onClick={onClick}
+      className="h-40 border-4 border-black p-4 flex flex-col items-center justify-center cursor-pointer active:translate-y-1 transition-all"
+      style={{ backgroundColor: color, color: textColor, boxShadow: SHADOWS.HARD }}
+    >
+      <div className="mb-2">{icon}</div>
+      <span className="text-xl font-black">{label}</span>
+    </div>
+  );
+}
+
+function NavIcon({ active, icon, label, onClick }) {
+  return (
+    <button onClick={onClick} className={`flex flex-col items-center gap-1 ${active ? 'text-black' : 'text-gray-300'}`}>
+      <div className={`transition-transform ${active ? 'scale-125' : ''}`}>
+        {React.cloneElement(icon, { size: 28, strokeWidth: active ? 3 : 2 })}
+      </div>
+      <span className={`text-[10px] font-black uppercase ${active ? 'block' : 'hidden'}`}>{label}</span>
+    </button>
+  );
+}
+
+function ItineraryView({ items, onDelete }) {
+  const dates = ["05/20", "05/21", "05/22", "05/23"];
+  const [selDate, setSelDate] = useState("05/20");
+  
+  return (
+    <div className="animate-in slide-in-from-bottom-4">
+      <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
+        {dates.map(d => (
+          <button 
+            key={d} 
+            onClick={() => setSelDate(d)}
+            className={`flex-shrink-0 border-4 border-black px-6 py-2 font-black text-lg ${selDate === d ? 'bg-yellow-300 -translate-y-1 shadow-[4px_4px_0px_0px_#000]' : 'bg-white'}`}
           >
-            {date}
+            {d}
           </button>
         ))}
       </div>
-      <div className="border-l-8 border-black ml-4 pl-8 space-y-6 pt-4">
-        {itinerary.filter(i => i.date === selectedDate).map((item) => (
-          <div key={item.id} className="relative">
-            <div className="absolute -left-[44px] top-6 w-6 h-6 bg-white border-4 border-black rounded-full z-10" />
+      <div className="border-l-8 border-black ml-4 pl-8 space-y-8 pt-6">
+        {items.filter(i => i.date === selDate).sort((a,b) => a.time.localeCompare(b.time)).map(item => (
+          <div key={item.id} className="relative group">
+            <div className="absolute -left-[44px] top-6 w-6 h-6 bg-white border-4 border-black rounded-full z-10 group-hover:bg-red-500 transition-colors" />
             <div className="bg-white border-4 border-black p-4 shadow-[6px_6px_0px_0px_#000] relative">
-              <button onClick={() => deleteItem(item.id, 'itinerary')} className="absolute top-2 right-2 text-gray-400"><Trash2 size={16} /></button>
+              <button onClick={() => onDelete(item.id)} className="absolute top-2 right-2 text-gray-300 hover:text-red-500"><Trash2 size={16} /></button>
               <div className="text-sm font-black text-red-600">{item.time}</div>
               <div className="text-xl font-black">{item.title}</div>
-              <div className="text-md font-bold mt-1 text-gray-600">{item.location}</div>
+              <div className="text-md font-bold text-gray-500">{item.location}</div>
             </div>
           </div>
         ))}
+        {items.filter(i => i.date === selDate).length === 0 && <p className="italic font-bold text-gray-400">這天還沒有行程...</p>}
       </div>
     </div>
   );
-};
+}
 
-const ExpensesView = ({ expenses, deleteItem }) => {
-  const total = expenses.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0) * EXCHANGE_RATE, 0);
+function ExpensesView({ items, onDelete }) {
+  const totalTwd = useMemo(() => items.reduce((sum, i) => sum + (parseFloat(i.amount) * EXCHANGE_RATE), 0), [items]);
   return (
-    <div className="animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-black text-white p-8 border-4 border-black shadow-[8px_8px_0px_0px_#00785E] mb-8 text-center rotate-1">
-        <div className="text-sm font-black opacity-60">ESTIMATED TOTAL (TWD)</div>
-        <div className="text-6xl font-black italic">NT$ {Math.round(total).toLocaleString()}</div>
+    <div className="animate-in slide-in-from-bottom-4">
+      <div className="bg-black text-white p-8 border-4 border-black shadow-[8px_8px_0px_0px_#00785E] mb-6 text-center rotate-1">
+        <div className="text-xs font-black opacity-50 uppercase tracking-widest">Estimated Total (TWD)</div>
+        <div className="text-5xl font-black italic">NT$ {Math.round(totalTwd).toLocaleString()}</div>
       </div>
       <div className="space-y-4">
-        {expenses.map(exp => (
-          <div key={exp.id} className="bg-white border-4 border-black p-4 flex justify-between items-center shadow-[4px_4px_0px_0px_#000]">
+        {items.map(item => (
+          <div key={item.id} className="bg-white border-4 border-black p-4 flex justify-between items-center shadow-[4px_4px_0px_0px_#000]">
             <div>
-              <div className="font-black text-xl leading-tight">{exp.note}</div>
-              <div className="text-xs font-bold uppercase text-gray-500">{exp.category}</div>
+              <div className="font-black text-xl">{item.note}</div>
+              <div className="text-xs font-bold bg-gray-100 px-1 inline-block border border-black">{item.category}</div>
             </div>
             <div className="text-right">
-              <div className="font-black text-2xl" style={{ color: HK_RED }}>${exp.amount}</div>
-              <button onClick={() => deleteItem(exp.id, 'expenses')} className="text-gray-300 hover:text-red-500"><Trash2 size={14} /></button>
+              <div className="text-2xl font-black text-red-600">${item.amount}</div>
+              <button onClick={() => onDelete(item.id)} className="text-gray-300 hover:text-red-600"><Trash2 size={14} /></button>
             </div>
           </div>
         ))}
       </div>
     </div>
   );
-};
+}
 
-const ChecklistView = ({ type, items, toggleCheck, deleteItem }) => (
-  <div className="animate-in slide-in-from-bottom-4 duration-300">
-    <h2 className="text-4xl font-black mb-8 uppercase italic tracking-tighter">
-      {type === 'luggage' ? 'Luggage List' : 'To-do List'}
-    </h2>
-    <div className="space-y-4">
-      {items.map(item => (
-        <div 
-          key={item.id} 
-          onClick={() => toggleCheck(item.id, item.completed, type)}
-          className={`border-4 border-black p-5 flex items-center justify-between cursor-pointer transition-all ${item.completed ? 'bg-gray-200' : 'bg-white shadow-[6px_6px_0px_0px_#000]'}`}
-        >
-          <div className="flex items-center gap-4">
-            <div className={`w-10 h-10 border-4 border-black flex items-center justify-center ${item.completed ? 'bg-green-500' : 'bg-white'}`}>
-              {item.completed && <X size={24} className="text-white stroke-[4px]" />}
-            </div>
-            <span className={`text-2xl font-black ${item.completed ? 'line-through opacity-50' : ''}`}>{item.text}</span>
-          </div>
-          <button onClick={(e) => { e.stopPropagation(); deleteItem(item.id, type); }} className="text-gray-400"><Trash2 size={24} /></button>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const CalculatorModal = ({ onClose, input, setInput }) => {
-  const result = input ? (parseFloat(input) * EXCHANGE_RATE).toFixed(1) : '0';
+function ListView({ type, items, onToggle, onDelete }) {
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+    <div className="animate-in slide-in-from-bottom-4">
+      <h2 className="text-4xl font-black mb-6 uppercase italic tracking-tighter">
+        {type === 'luggage' ? 'Luggage List' : 'To-do List'}
+      </h2>
+      <div className="space-y-4">
+        {items.map(item => (
+          <div 
+            key={item.id}
+            onClick={() => onToggle(item.id, item.completed, type)}
+            className={`border-4 border-black p-5 flex items-center justify-between cursor-pointer transition-all ${item.completed ? 'bg-gray-100 opacity-50' : 'bg-white shadow-[6px_6px_0px_0px_#000]'}`}
+          >
+            <div className="flex items-center gap-4">
+              <div className={`w-10 h-10 border-4 border-black flex items-center justify-center ${item.completed ? 'bg-green-600' : 'bg-white'}`}>
+                {item.completed && <X size={24} className="text-white stroke-[4px]" />}
+              </div>
+              <span className={`text-2xl font-black ${item.completed ? 'line-through' : ''}`}>{item.text}</span>
+            </div>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(item.id, type); }} className="text-gray-400 hover:text-red-600"><Trash2 size={24} /></button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CalculatorModal({ onClose, input, setInput }) {
+  const res = input ? (parseFloat(input) * EXCHANGE_RATE).toFixed(1) : '0';
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[500] flex items-center justify-center p-6">
       <div className="bg-white border-8 border-black w-full max-w-xs p-6 shadow-2xl">
-        <div className="flex justify-between items-center mb-6">
-          <span className="font-black italic text-xl">CONVERTER</span>
-          <button onClick={onClose}><X size={32} strokeWidth={3} /></button>
+        <div className="flex justify-between items-center mb-6 font-black italic">
+          <span>CURRENCY CONVERTER</span>
+          <button onClick={onClose}><X size={32} strokeWidth={4} /></button>
         </div>
-        <div className="bg-black text-white p-6 mb-6 text-right font-mono">
-          <div className="text-xs opacity-50 mb-1">HKD/MOP</div>
-          <div className="text-4xl font-black mb-4 overflow-hidden">{input || '0'}</div>
-          <div className="text-xs opacity-50 mb-1">TWD (估算)</div>
-          <div className="text-5xl font-black text-yellow-300">{result}</div>
+        <div className="bg-black text-white p-6 mb-6 text-right font-mono border-4 border-black">
+          <div className="text-[10px] opacity-50 mb-1 font-black">HKD / MOP</div>
+          <div className="text-4xl font-black mb-4 truncate">{input || '0'}</div>
+          <div className="text-[10px] opacity-50 mb-1 font-black">TWD (EST.)</div>
+          <div className="text-5xl font-black text-yellow-300">{res}</div>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {[1,2,3,4,5,6,7,8,9,'.',0,'C'].map(k => (
             <button 
               key={k} 
-              onClick={() => k === 'C' ? setInput('') : setInput(prev => prev.length < 9 ? prev + k : prev)}
-              className="border-4 border-black p-4 font-black text-2xl active:bg-yellow-300"
+              onClick={() => k === 'C' ? setInput('') : setInput(prev => prev.length < 8 ? prev + k : prev)}
+              className="border-4 border-black p-4 font-black text-2xl active:bg-yellow-300 active:translate-y-1 transition-all"
             >
               {k}
             </button>
@@ -459,69 +455,84 @@ const CalculatorModal = ({ onClose, input, setInput }) => {
       </div>
     </div>
   );
-};
+}
 
-const AddModal = ({ activeTab, onClose, onSave }) => {
-  const [formData, setFormData] = useState({ title: '', time: '12:00', date: '05/20', location: '', amount: '', note: '', category: '餐飲', text: '' });
-  
+function AddModal({ activeTab, onClose, onSave }) {
+  const [form, setForm] = useState({ 
+    title: '', time: '12:00', date: '05/20', location: '', 
+    amount: '', note: '', category: '餐飲', text: '' 
+  });
+
   return (
-    <div className="fixed inset-0 bg-black/80 z-[300] flex items-end sm:items-center justify-center p-0 sm:p-6">
-      <div className="bg-white border-t-8 border-black sm:border-8 w-full max-w-lg p-8 pb-12 sm:pb-8">
+    <div className="fixed inset-0 bg-black/80 z-[600] flex items-end sm:items-center justify-center p-0 sm:p-6">
+      <div className="bg-white border-t-8 border-black sm:border-8 w-full max-w-lg p-8 pb-12 animate-in slide-in-from-bottom duration-300">
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-4xl font-black italic uppercase">Add Item</h2>
+          <h2 className="text-4xl font-black italic uppercase tracking-tighter">New Entry</h2>
           <button onClick={onClose}><X size={40} strokeWidth={4} /></button>
         </div>
 
         <div className="space-y-6">
-          {activeTab === 'itinerary' && (
+          {(activeTab === 'home' || activeTab === 'itinerary') && (
             <>
-              <Input label="行程名稱" placeholder="例如：中環飲茶" onChange={v => setFormData({...formData, title: v})} />
+              <FormInput label="行程標題" placeholder="例如：喝早茶" onChange={v => setForm({...form, title: v})} />
               <div className="flex gap-4">
-                <Input label="時間" type="time" onChange={v => setFormData({...formData, time: v})} />
+                <FormInput label="時間" type="time" val={form.time} onChange={v => setForm({...form, time: v})} />
                 <div className="flex-1">
-                  <label className="block text-xs font-black uppercase mb-1">日期</label>
-                  <select className="w-full border-4 border-black p-4 font-black" onChange={e => setFormData({...formData, date: e.target.value})}>
-                    <option>05/20</option><option>05/21</option><option>05/22</option><option>05/23</option><option>05/24</option>
+                  <label className="block text-xs font-black mb-1">日期</label>
+                  <select className="w-full border-4 border-black p-4 font-black" onChange={e => setForm({...form, date: e.target.value})}>
+                    <option>05/20</option><option>05/21</option><option>05/22</option><option>05/23</option>
                   </select>
                 </div>
               </div>
-              <Input label="地點" placeholder="地圖名稱或地址" onChange={v => setFormData({...formData, location: v})} />
+              <FormInput label="地點" placeholder="輸入目的地" onChange={v => setForm({...form, location: v})} />
             </>
           )}
 
           {activeTab === 'expenses' && (
             <>
-              <Input label="金額 (港澳幣)" type="number" placeholder="0.00" className="text-4xl" onChange={v => setFormData({...formData, amount: v})} />
-              <Input label="消費項目" placeholder="例如：九記牛腩" onChange={v => setFormData({...formData, note: v})} />
+              <FormInput label="金額 (港幣/澳幣)" type="number" placeholder="0.00" onChange={v => setForm({...form, amount: v})} />
+              <FormInput label="項目名稱" placeholder="例如：九記牛腩" onChange={v => setForm({...form, note: v})} />
+              <div className="grid grid-cols-3 gap-2">
+                {['餐飲', '交通', '購物'].map(c => (
+                  <button 
+                    key={c}
+                    onClick={() => setForm({...form, category: c})}
+                    className={`border-2 border-black p-2 font-black text-sm ${form.category === c ? 'bg-black text-white' : 'bg-white'}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
             </>
           )}
 
           {(activeTab === 'luggage' || activeTab === 'todos') && (
-            <Input label="內容" placeholder="輸入待辦或行李..." onChange={v => setFormData({...formData, text: v})} />
+            <FormInput label="清單項目" placeholder="要準備什麼呢？" onChange={v => setForm({...form, text: v})} />
           )}
 
           <button 
-            onClick={() => onSave(formData)}
-            className="w-full bg-black text-white border-4 border-black py-5 text-2xl font-black uppercase shadow-[6px_6px_0px_0px_#CF1126] active:translate-x-1 active:translate-y-1 transition-all"
+            onClick={() => onSave(form)}
+            className="w-full bg-black text-white border-4 border-black py-5 text-2xl font-black uppercase shadow-[6px_6px_0px_0px_#CF1126] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all mt-4"
           >
-            Save This!
+            Create Now!
           </button>
         </div>
       </div>
     </div>
   );
-};
+}
 
-const Input = ({ label, type = "text", placeholder, onChange, className = "" }) => (
-  <div>
-    <label className="block text-xs font-black uppercase mb-1">{label}</label>
-    <input 
-      type={type} 
-      placeholder={placeholder} 
-      onChange={e => onChange(e.target.value)}
-      className={`w-full border-4 border-black p-4 font-black placeholder:text-gray-300 focus:bg-yellow-50 outline-none ${className}`}
-    />
-  </div>
-);
-
-export default App;
+function FormInput({ label, type = "text", placeholder, onChange, val, className = "" }) {
+  return (
+    <div>
+      <label className="block text-[10px] font-black uppercase mb-1">{label}</label>
+      <input 
+        type={type} 
+        value={val}
+        placeholder={placeholder} 
+        onChange={e => onChange(e.target.value)}
+        className={`w-full border-4 border-black p-4 font-black placeholder:text-gray-300 outline-none focus:bg-yellow-50 ${className}`}
+      />
+    </div>
+  );
+}
