@@ -79,6 +79,7 @@
         .nav-btn.active { color: #000; }
 
         .info-card { background: white; border: 2.5px solid #4a4a4a; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 4px 4px 0px #4a4a4a; position: relative; }
+        .info-label { font-family: 'Kalam', cursive; font-size: 0.75rem; color: #999; }
         .edit-info-btn { position: absolute; top: 12px; right: 12px; color: #ccc; transition: 0.2s; }
         .edit-info-btn:hover { color: #000; }
 
@@ -141,9 +142,9 @@
                     <h2 class="text-xl font-black flex items-center gap-2"><i data-lucide="wallet" class="text-orange-400"></i> 旅行帳本</h2>
                     <button onclick="openMainAdd()" class="bg-black text-white text-[10px] px-3 py-1.5 rounded-full font-bold">新增消費</button>
                 </div>
-                <div id="ledger-list" class="space-y-3 mb-4 min-h-[150px] border-b border-gray-100 pb-4"></div>
+                <div id="ledger-list" class="space-y-3 mb-4 min-h-[150px] border-b border-gray-100 pb-4 text-xs"></div>
                 <div class="text-right">
-                    <p class="text-[9px] font-black opacity-40 uppercase">Total Expenses</p>
+                    <p class="text-[9px] font-black opacity-40 uppercase tracking-widest">Total Expenses</p>
                     <p id="grand-total-amount" class="text-2xl font-black text-red-500">TWD 0</p>
                 </div>
             </div>
@@ -197,7 +198,7 @@
             <div class="info-card bg-yellow-50/20">
                 <button onclick="toggleInfoModal('wishlist')" class="edit-info-btn"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                 <h3 class="font-black text-sm mb-3 text-yellow-600 flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4"></i> 願望清單</h3>
-                <p id="disp-wish" class="text-sm font-bold leading-relaxed italic whitespace-pre-line text-gray-500">點擊編輯寫下心願吧！</p>
+                <p id="disp-wish" class="text-sm font-bold leading-relaxed italic whitespace-pre-line text-gray-500">點擊編輯寫下心願吧！ ✨</p>
             </div>
         </div>
     </main>
@@ -211,9 +212,9 @@
         <button onclick="switchTab('info')" id="nav-info" class="nav-btn"><i data-lucide="info"></i><span>資訊</span></button>
     </nav>
 
-    <!-- 所有的編輯彈窗 -->
+    <!-- 編輯視窗 -->
     <div id="modal-itinerary" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[200] p-6 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 border-2 border-black rotate-1 shadow-2xl">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 border-2 border-black rotate-1">
             <h2 id="itinerary-title" class="text-xl font-black mb-4 underline">行程筆記</h2>
             <div class="space-y-3">
                 <select id="it-cat" class="w-full p-2 border-2 border-black rounded-lg font-bold"><option value="spot">📍 景點</option><option value="food">🍴 美食</option><option value="transport">🚌 交通</option><option value="hotel">🏨 住宿</option><option value="note">📝 筆記</option></select>
@@ -222,12 +223,15 @@
                 <input type="url" id="it-map" placeholder="Map 網址" class="w-full p-2 border-b-2 border-black outline-none text-xs">
                 <input type="text" id="it-note" placeholder="備註..." class="w-full p-2 border-b-2 border-black outline-none text-sm italic">
             </div>
-            <div class="flex gap-2 mt-6"><button onclick="closeModals()" class="flex-1 py-2 border-2 border-black rounded-xl font-bold">取消</button><button onclick="saveItinerary()" class="flex-1 py-2 bg-black text-white rounded-xl font-bold">儲存</button></div>
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeModals()" class="flex-1 py-2 border-2 border-black rounded-xl font-bold">取消</button>
+                <button onclick="saveItinerary()" class="flex-1 py-2 bg-black text-white rounded-xl font-bold text-sm">儲存</button>
+            </div>
         </div>
     </div>
 
     <div id="modal-ledger" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[200] p-6 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 border-2 border-black -rotate-1 shadow-2xl">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 border-2 border-black -rotate-1">
             <h2 id="ledger-modal-title" class="text-xl font-black mb-4 underline text-pink-500">記帳 💰</h2>
             <div class="space-y-3">
                 <div class="flex gap-2">
@@ -238,36 +242,44 @@
                 <input type="text" id="exp-title" placeholder="品項" class="w-full p-2 border-b-2 border-black outline-none font-bold text-sm">
                 <input type="number" id="exp-amt" placeholder="金額" class="w-full p-2 border-b-2 border-black outline-none font-bold text-red-500">
             </div>
-            <div class="flex gap-2 mt-6"><button onclick="closeModals()" class="flex-1 py-2 border-2 border-black rounded-xl font-bold">取消</button><button onclick="saveExpense()" class="flex-1 py-2 bg-black text-white rounded-xl font-bold">記帳</button></div>
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeModals()" class="flex-1 py-2 border-2 border-black rounded-xl font-bold">取消</button>
+                <button onclick="saveExpense()" class="flex-1 py-2 bg-black text-white rounded-xl font-bold text-sm">記帳</button>
+            </div>
         </div>
     </div>
 
     <div id="modal-checklist" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[200] p-6 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-xs rounded-2xl p-6 border-2 border-black shadow-2xl">
+        <div class="bg-white w-full max-w-xs rounded-2xl p-6 border-2 border-black">
             <h2 class="text-xl font-black mb-4 underline text-green-600">新增清單 📋</h2>
             <div class="space-y-3">
                 <select id="ch-type" class="w-full p-2 border-2 border-black rounded-lg font-bold"><option value="luggage">🎒 行李</option><option value="todo">📝 待辦</option></select>
-                <input type="text" id="ch-text" placeholder="內容..." class="w-full p-2 border-b-2 border-black outline-none font-bold">
+                <input type="text" id="ch-text" placeholder="內容..." class="w-full p-2 border-b-2 border-black outline-none font-bold text-sm">
             </div>
-            <div class="flex gap-2 mt-6"><button onclick="closeModals()" class="flex-1 py-2 border-2 border-black rounded-xl font-bold">取消</button><button onclick="saveChecklist()" class="flex-1 py-2 bg-black text-white rounded-xl font-bold">加入</button></div>
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeModals()" class="flex-1 py-2 border-2 border-black rounded-xl font-bold">取消</button>
+                <button onclick="saveChecklist()" class="flex-1 py-2 bg-black text-white rounded-xl font-bold text-sm">加入</button>
+            </div>
         </div>
     </div>
 
     <div id="modal-info" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[200] p-6 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 border-2 border-black overflow-y-auto max-h-[85vh] shadow-2xl">
-            <h2 id="info-edit-title" class="text-xl font-black mb-4 underline text-blue-600">編輯資訊</h2>
-            <div id="info-edit-body" class="space-y-4 pb-4"></div>
-            <div class="flex gap-2 mt-4"><button onclick="closeModals()" class="flex-1 py-2 border-2 border-black rounded-xl font-bold text-sm">取消</button><button onclick="saveInfo()" class="flex-1 py-2 bg-black text-white rounded-xl font-bold text-sm">儲存</button></div>
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 border-2 border-black overflow-y-auto max-h-[80vh]">
+            <h2 id="info-edit-title" class="text-xl font-black mb-4 underline">編輯資訊</h2>
+            <div id="info-edit-body" class="space-y-4"></div>
+            <div class="flex gap-2 mt-8">
+                <button onclick="closeModals()" class="flex-1 py-2 border-2 border-black rounded-xl font-bold text-sm">取消</button>
+                <button onclick="saveInfo()" class="flex-1 py-2 bg-black text-white rounded-xl font-bold text-sm">儲存</button>
+            </div>
         </div>
     </div>
 
-    <!-- Firebase 腳本模組 -->
+    <!-- Firebase 與核心邏輯 (使用 RULE 1 & 3) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // Firebase 偵測與初始化
         let db, auth, appId, user;
         const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
         
@@ -296,21 +308,27 @@
             onAuthStateChanged(auth, async (u) => {
                 if (u) {
                     user = u;
-                    // RULE 1: 資料路徑規範
-                    const docRef = doc(db, 'artifacts', appId, 'users', u.uid, 'data', 'tripState');
+                    // RULE 1: 符合路徑規範
+                    const docRef = doc(db, 'artifacts', appId, 'users', u.uid, 'trip_state', 'current');
                     try {
                         const snap = await getDoc(docRef);
-                        if (snap.exists()) { window.state = snap.data(); }
+                        if (snap.exists()) { 
+                            window.state = snap.data(); 
+                        }
                         window.renderAll();
                         hideLoading();
 
+                        // 即時同步，但鎖定存檔中的狀態
                         onSnapshot(docRef, (s) => {
                             if (s.exists() && !window.isSaving) { 
                                 window.state = s.data();
                                 window.renderAll();
                             }
                         });
-                    } catch(e) { hideLoading(); }
+                    } catch(e) { 
+                        console.error(e);
+                        hideLoading(); 
+                    }
                 } else {
                     runAuth();
                 }
@@ -319,14 +337,14 @@
             setTimeout(hideLoading, 500);
         }
 
-        // 強制同步 (Rule 3)
+        // 強制同步雲端 (Rule 3 Guarded)
         window.forceSync = async () => {
             if (!db || !user) return;
-            window.isSaving = true;
+            window.isSaving = true; // 加鎖，防止雲端推送覆蓋本地輸入
             const ind = document.getElementById('sync-indicator');
             ind.innerText = "同步中..."; ind.className = "syncing opacity-50";
             try {
-                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'tripState');
+                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'trip_state', 'current');
                 await setDoc(docRef, window.state);
                 ind.innerText = "已同步雲端"; ind.className = "sync-success opacity-100";
             } catch(e) {
@@ -400,7 +418,7 @@
         window.editItinerary = (i) => { editIdx = i; const x = window.state.tripData[currentDay][i]; document.getElementById('itinerary-title').innerText="編輯行程"; document.getElementById('it-title').value = x.title; document.getElementById('it-cat').value = x.cat; document.getElementById('it-note').value = x.note; document.getElementById('it-map').value = x.map || ''; document.getElementById('modal-itinerary').style.display='flex'; };
         window.deleteItinerary = (i) => { if(confirm("確定刪除此行程？")) { window.state.tripData[currentDay].splice(i,1); window.forceSync(); } };
 
-        // --- 記帳功能 ---
+        // --- 記帳邏輯 ---
         function renderLedger() {
             const list = document.getElementById('ledger-list'); list.innerHTML = ''; let total = 0;
             for (let d=1; d<=4; d++) {
@@ -411,7 +429,7 @@
                         let twd = x.curr === 'TWD' ? x.amt : (x.curr === 'HKD' ? x.amt * TWD_RATE : (x.amt / MOP_RATE) * TWD_RATE);
                         total += twd;
                         const row = document.createElement('div'); row.className = "flex justify-between items-center group py-1";
-                        row.innerHTML = `<div class='flex items-center gap-2'><div class='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all'><button onclick="editExpense(${window.state.ledgerData.indexOf(x)})"><i data-lucide='edit-3' class='w-3 h-3 text-blue-300'></i></button><button onclick="deleteExpense(${window.state.ledgerData.indexOf(x)})"><i data-lucide='trash-2' class='w-3 h-3 text-red-200'></i></button></div><i data-lucide="${expCatMap[x.cat].icon}" class='w-3 h-3 text-gray-300'></i><span class='text-xs font-bold'>${x.title}</span><span class='text-[7px] bg-gray-100 px-1 rounded font-black'>${x.curr}</span></div><span class='text-[10px] font-mono text-gray-400'>≈ TWD ${Math.round(twd).toLocaleString()}</span>`;
+                        row.innerHTML = `<div class='flex items-center gap-2'><div class='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all'><button onclick="editExpense(${window.state.ledgerData.indexOf(x)})"><i data-lucide='edit-3' class='w-3 h-3 text-blue-300'></i></button><button onclick="deleteExpense(${window.state.ledgerData.indexOf(x)})"><i data-lucide='trash-2' class='w-3 h-3 text-red-200'></i></button></div><i data-lucide="${expCatMap[x.cat].icon}" class='w-3 h-3 text-gray-300'></i><span class='font-bold'>${x.title}</span><span class='text-[7px] bg-gray-100 px-1 rounded font-black'>${x.curr}</span></div><span class='font-mono text-gray-400'>≈ TWD ${Math.round(twd).toLocaleString()}</span>`;
                         list.appendChild(row);
                     });
                 }
@@ -429,7 +447,7 @@
         window.editExpense = (i) => { editIdx = i; const x = window.state.ledgerData[i]; document.getElementById('ledger-modal-title').innerText="編輯消費記錄"; document.getElementById('exp-title').value = x.title; document.getElementById('exp-amt').value = x.amt; document.getElementById('exp-day').value = x.day; document.getElementById('exp-curr').value = x.curr; document.getElementById('exp-cat').value = x.cat; document.getElementById('modal-ledger').style.display='flex'; };
         window.deleteExpense = (i) => { if(confirm("確定刪除此花費？")) { window.state.ledgerData.splice(i,1); window.forceSync(); } };
 
-        // --- 清單功能 ---
+        // --- 清單邏輯 ---
         window.setChecklistType = (t) => { activeChecklistType = t; document.getElementById('toggle-luggage').classList.toggle('active', t==='luggage'); document.getElementById('toggle-todo').classList.toggle('active', t==='todo'); window.renderAll(); };
         function renderChecklist() {
             const c = document.getElementById('checklist-container'); c.innerHTML = '';
@@ -450,26 +468,31 @@
 
         // --- 資訊功能 ---
         function renderInfo() {
-            const d = window.state.infoData;
-            const map = { 'disp-fl-dep': d.flDep, 'disp-fl-ret': d.flRet, 'disp-ht-name': d.htName, 'disp-ht-addr': d.htAddr, 'disp-wish': d.wish };
-            for (let id in map) { const el = document.getElementById(id); if (el) el.innerText = map[id] || (id === 'disp-wish' ? "點擊編輯寫下心願吧！ ✨" : "尚未填寫"); }
+            const d = window.state.infoData || {};
+            if (document.getElementById('disp-fl-dep')) document.getElementById('disp-fl-dep').innerText = d.flDep || "尚未填寫";
+            if (document.getElementById('disp-fl-ret')) document.getElementById('disp-fl-ret').innerText = d.flRet || "尚未填寫";
+            if (document.getElementById('disp-ht-name')) document.getElementById('disp-ht-name').innerText = d.htName || "尚未填寫";
+            if (document.getElementById('disp-ht-addr')) document.getElementById('disp-ht-addr').innerText = d.htAddr || "尚未填寫";
+            if (document.getElementById('disp-wish')) document.getElementById('disp-wish').innerText = d.wish || "點擊編輯寫下心願吧！ ✨";
             
-            const tc = document.getElementById('disp-tickets'); if (!tc) return;
-            tc.innerHTML = '';
-            if(!d.tickets || !d.tickets.length) tc.innerHTML = `<p class='text-[10px] text-gray-300 italic'>尚未填寫憑證</p>`;
-            else d.tickets.forEach(t => {
-                const div = document.createElement('div'); div.className = "flex justify-between items-center py-1.5 border-b border-gray-50";
-                div.innerHTML = `<div><h4 class='text-xs font-bold text-gray-700'>${t.title}</h4><p class='text-[9px] font-bold text-gray-400 uppercase'>Code: ${t.code||'-'}</p></div><div class='flex gap-1.5'>${t.url?`<a href='${t.url}' target='_blank' class='p-1 bg-blue-50 text-blue-500 rounded border border-blue-100'><i data-lucide='external-link' class='w-3 h-3'></i></a>`:''}${t.file?`<div class='p-1 bg-green-50 text-green-500 rounded flex items-center gap-1 border border-green-100 font-black'><i data-lucide='file-text' class='w-3 h-3'></i><span class='text-[7px]'>${t.file}</span></div>`:''}</div>`;
-                tc.appendChild(div);
-            });
+            const tc = document.getElementById('disp-tickets'); 
+            if (tc) {
+                tc.innerHTML = '';
+                if(!d.tickets || !d.tickets.length) tc.innerHTML = `<p class='text-[10px] text-gray-300 italic'>尚無憑證</p>`;
+                else d.tickets.forEach(t => {
+                    const div = document.createElement('div'); div.className = "flex justify-between items-center py-1.5 border-b border-gray-50";
+                    div.innerHTML = `<div><h4 class='text-xs font-bold text-gray-700'>${t.title}</h4><p class='text-[9px] font-bold text-gray-400 uppercase'>Code: ${t.code||'-'}</p></div><div class='flex gap-1.5'>${t.url?`<a href='${t.url}' target='_blank' class='p-1 bg-blue-50 text-blue-500 rounded border border-blue-100'><i data-lucide='external-link' class='w-3 h-3'></i></a>`:''}${t.file?`<div class='p-1 bg-green-50 text-green-500 rounded flex items-center gap-1 border border-green-100 font-black'><i data-lucide='file-text' class='w-3 h-3'></i><span class='text-[7px]'>${t.file}</span></div>`:''}</div>`;
+                    tc.appendChild(div);
+                });
+            }
         }
 
         window.toggleInfoModal = (sec) => {
             currentInfoSec = sec; const b = document.getElementById('info-edit-body'); b.innerHTML = '';
             const m = document.getElementById('modal-info'); m.style.display = 'flex';
             const id = window.state.infoData;
-            if(sec === 'flight') { document.getElementById('info-edit-title').innerText = "編輯航班 ✈️"; b.innerHTML = `<input id='e-fl-dep' value='${id.flDep}' class='w-full p-2 border-b-2 border-black outline-none font-bold text-sm' placeholder='去程'><input id='e-fl-ret' value='${id.flRet}' class='w-full p-2 border-b-2 border-black outline-none font-bold text-sm' placeholder='回程'>`; }
-            else if(sec === 'stay') { document.getElementById('info-edit-title').innerText = "編輯住宿 🏨"; b.innerHTML = `<input id='e-ht-name' value='${id.htName}' class='w-full p-2 border-b-2 border-black outline-none font-bold text-sm' placeholder='酒店名稱'><input id='e-ht-addr' value='${id.htAddr}' class='w-full p-2 border-b-2 border-black outline-none font-bold text-sm' placeholder='地址/備註'>`; }
+            if(sec === 'flight') { document.getElementById('info-edit-title').innerText = "編輯航班 ✈️"; b.innerHTML = `<input id='e-fl-dep' value='${id.flDep}' class='w-full p-2 border-b-2 border-black outline-none font-bold text-sm' placeholder='去程 (例: BR801 10:00)'><input id='e-fl-ret' value='${id.flRet}' class='w-full p-2 border-b-2 border-black outline-none font-bold text-sm' placeholder='回程 (例: BR802 18:00)'>`; }
+            else if(sec === 'stay') { document.getElementById('info-edit-title').innerText = "編輯住宿 🏨"; b.innerHTML = `<input id='e-ht-name' value='${id.htName}' class='w-full p-2 border-b-2 border-black outline-none font-bold text-sm' placeholder='酒店名稱'><input id='e-ht-addr' value='${id.htAddr}' class='w-full p-2 border-b-2 border-black outline-none font-bold text-sm' placeholder='備註/位址'>`; }
             else if(sec === 'wishlist') { document.getElementById('info-edit-title').innerText = "願望清單 💖"; b.innerHTML = `<textarea id='e-wish' class='w-full h-32 p-2 border-2 border-black rounded-xl text-sm font-bold'>${id.wish}</textarea>`; }
             else if(sec === 'tickets') {
                 document.getElementById('info-edit-title').innerText = "編輯票券 🎫";
